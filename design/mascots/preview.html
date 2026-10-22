@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pick a mascot: Firefly or Owl</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --ink:#2a1a26; --surface:#33202e; --line:#5a3a52; --paper:#fff4dc; --peach:#ffd9b8; --sparkle:#ffd23f; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#1f1320 url(forest.png) bottom center / auto 100% no-repeat fixed; color:var(--paper); font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif; image-rendering: pixelated; }
+  body::before { content:""; position:fixed; inset:0; background:linear-gradient(rgba(31,19,32,.86), rgba(31,19,32,.72)); z-index:-1; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px 24px 60px; }
+  h1 { font-size: 34px; margin: 0 0 4px; font-weight: 800; }
+  p.sub { margin: 0 0 22px; color: rgba(255,244,220,.78); max-width: 60ch; }
+  .row { margin: 0 0 26px; border: 2px solid var(--line); background: rgba(51,32,46,.82); padding: 16px 18px 18px; box-shadow: 4px 4px 0 rgba(0,0,0,.35); }
+  .row h2 { margin: 0 0 2px; font-size: 22px; }
+  .row .tag { color: var(--peach); font: 700 12px ui-monospace, "SF Mono", monospace; margin-bottom: 12px; display:block; }
+  .moods { display:grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .cell { text-align:center; }
+  canvas { width: 100%; max-width: 224px; aspect-ratio: 1; image-rendering: pixelated; background: rgba(42,26,38,.55); border: 2px solid var(--line); }
+  .cell b { display:block; margin-top: 6px; font: 800 13px ui-monospace, "SF Mono", monospace; color: var(--paper); }
+  .cell i { display:block; font-style: normal; font-size: 12px; color: rgba(255,244,220,.72); }
+  .strip { display:flex; gap: 16px; align-items:flex-end; margin-top: 16px; }
+  .strip canvas { width: 96px; max-width:96px; }
+  .note { font-size: 13px; color: rgba(255,244,220,.78); max-width: 70ch; }
+  @media (max-width: 900px) { .moods { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Pick a mascot</h1>
+  <p class="sub">Both are 32×32 pixel sprites in the same style as Mochi, animated, with the same five moods. Watch how each one tells you what is going on without any text.</p>
+
+  <section class="row" id="firefly">
+    <span class="tag">OPTION A</span>
+    <h2>Glim, the firefly spirit</h2>
+    <p class="note">The glow is the alert. It pulses slowly when calm, brightens when Claude is waiting, blinks amber when impatient, flares red when angry, and bursts gold when done. It already lives in your forest scene.</p>
+    <div class="moods" id="fireflyMoods"></div>
+  </section>
+
+  <section class="row" id="owl">
+    <span class="tag">OPTION B</span>
+    <h2>Hoot, the little owl</h2>
+    <p class="note">Always on watch. Blinks slowly when calm, wide-eyed when Claude is waiting, half-lidded and sweaty when impatient, puffed up and glaring when angry, wings up when done.</p>
+    <div class="moods" id="owlMoods"></div>
+  </section>
+</main>
+<script src="mascots.js"></script>
+<script>
+const M = window.MASCOTS; const MOODLIST = M.MOODS;
+const NOTES = { calm: 'Claude is working', waiting: 'Needs you', annoyed: 'Still waiting…', angry: 'HELLO?!', done: 'All done' };
+const SCALE = 8;
+const frozen = new URLSearchParams(location.search).get('t');
+const cells = [];
+function build(containerId, draw) {
+  const root = document.getElementById(containerId);
+  for (const mood of MOODLIST) {
+    const cell = document.createElement('div'); cell.className = 'cell';
+    const cv = document.createElement('canvas'); cv.width = N * SCALE; cv.height = N * SCALE;
+    cell.appendChild(cv);
+    cell.insertAdjacentHTML('beforeend', `<b>${mood}</b><i>${NOTES[mood]}</i>`);
+    root.appendChild(cell);
+    cells.push({ cv, draw, mood });
+  }
+}
+function paint(cv, spr) {
+  const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const i = spr.px[y * N + x]; if (!i) continue;
+    g.fillStyle = spr.pal[i] || '#f0f'; g.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+  }
+}
+build("fireflyMoods", M.drawFirefly); build("owlMoods", M.drawOwl);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(ms) {
+  const t = frozen !== null ? parseFloat(frozen) : reduce ? 0 : ms / 1000;
+  for (const c of cells) paint(c.cv, c.draw(c.mood, t));
+  if (frozen === null && !reduce) requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
