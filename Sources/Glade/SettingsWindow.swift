@@ -5,7 +5,7 @@ import GladeCore
 
 /// Settings live in a normal window. While it is open Glade behaves like a regular app (menu, Cmd-Tab);
 /// when it closes it goes back to being invisible.
-enum SettingsTab: String { case alerts, claudeCode = "claude-code", general }
+enum SettingsTab: String { case alerts, looks, claudeCode = "claude-code", general }
 
 final class SettingsNav: ObservableObject {
     static let shared = SettingsNav()
@@ -56,11 +56,12 @@ struct SettingsView: View {
     var body: some View {
         TabView(selection: $nav.tab) {
             AlertsTab().tabItem { Label("Alerts", systemImage: "bell") }.tag(SettingsTab.alerts)
+            LooksTab().tabItem { Label("Looks", systemImage: "photo") }.tag(SettingsTab.looks)
             ClaudeCodeTab().tabItem { Label("Claude Code", systemImage: "terminal") }.tag(SettingsTab.claudeCode)
             GeneralTab().tabItem { Label("General", systemImage: "gearshape") }.tag(SettingsTab.general)
         }
         .padding(20)
-        .frame(minWidth: 520, maxWidth: 520, minHeight: 300)
+        .frame(width: 520, height: 420)
     }
 }
 

@@ -61,6 +61,16 @@ jq -e '.snoozeUntil > 0' "$GLADE_HOME/config.json" >/dev/null || fail "snooze di
 ok "CLI writes the isolated config"
 "$GLADE" snapshot "$TH/snap.png" done >/dev/null && [ -s "$TH/snap.png" ] || fail "snapshot failed"
 ok "snapshot renders"
+[ -s "$GLADE_HOME/Glade.app/Contents/Resources/Looks/night-forest.png" ] || fail "built-in look missing from the app bundle"
+"$GLADE" look list | grep -q "night-forest" || fail "glade look list is missing the built-in"
+cp "$GLADE_HOME/Glade.app/Contents/Resources/Looks/night-forest.png" "$TH/photo.png"
+"$GLADE" look add "$TH/photo.png" --name "Test photo" | grep -q "^added user-" || fail "glade look add failed"
+"$GLADE" look list | grep -q "Test photo" || fail "added look not listed"
+ID=$("$GLADE" look list | awk '/Test photo/ {print ($1 == "*") ? $2 : $1}')
+"$GLADE" look use "$ID" >/dev/null && [ "$(jq -r .lookId "$GLADE_HOME/config.json")" = "$ID" ] || fail "look use did not write config"
+"$GLADE" look remove "$ID" >/dev/null
+[ "$(jq -r .lookId "$GLADE_HOME/config.json")" = "night-forest" ] || fail "removing the active look did not fall back"
+ok "look list / add / use / remove, built-in shipped in the bundle"
 "$GLADE" quit; sleep 1
 
 ./uninstall.sh >/dev/null 2>&1 || fail "uninstall.sh exited non-zero"

@@ -8,8 +8,9 @@ func usage() {
 
       glade test [wait|done] [--age SECONDS]   show the buddy right now
       glade snooze MINUTES|forever|clear      silence the buddy
-      glade settings [alerts|claude-code|general]     open the settings window
+      glade settings [alerts|looks|claude-code|general]     open the settings window
       glade hooks install|uninstall|status            manage the Claude Code hooks
+      glade look list|use ID|add PHOTO|remove ID      manage backdrops (add --out FILE.png just exports)
       glade hide                               hide it
       glade chime on|off                       toggle the soft chime
       glade delays WAIT DONE                   set delays in seconds (default 5 20)
@@ -103,6 +104,53 @@ case "snooze":
 case "settings":
     guard ensureDaemon() else { print("could not start Glade.app"); exit(1) }
     _ = sendEvent("Settings", flags: args.count > 1 ? "tab=\(args[1])" : "")
+case "look":
+    let store = LookStore()
+    let usage = "usage: glade look list | use ID | add PHOTO [--name NAME] [--calm 0-1] [--out FILE.png] | remove ID"
+    switch args.count > 1 ? args[1] : "list" {
+    case "list":
+        let current = Config.load().lookId
+        for l in store.all() { print((l.id == current ? "* " : "  ") + l.id + "  " + l.name + (l.builtin ? "  (built in)" : "")) }
+    case "use":
+        guard args.count > 2, store.all().contains(where: { $0.id == args[2] }) else { print("no such look; try: glade look list"); exit(1) }
+        var c = Config.load(); c.lookId = args[2]; c.save()
+        print("using " + args[2])
+    case "add":
+        guard args.count > 2 else { print(usage); exit(1) }
+        var name = URL(fileURLWithPath: args[2]).deletingPathExtension().lastPathComponent
+        var opts = LookPipeline.Options()
+        var out: String?
+        var i = 3
+        while i + 1 < args.count {
+            switch args[i] {
+            case "--name": name = args[i + 1]
+            case "--calm": opts.calm = min(1, max(0, Double(args[i + 1]) ?? 0))
+            case "--out": out = args[i + 1]
+            default: print(usage); exit(1)
+            }
+            i += 2
+        }
+        guard let src = LookPipeline.load(URL(fileURLWithPath: args[2])) else { print("couldn't read \(args[2]) as an image"); exit(1) }
+        let r = LookPipeline.process(src, options: opts)
+        do {
+            if let out = out {
+                try LookPipeline.writePNG(r.image, to: URL(fileURLWithPath: out))
+                print("wrote \(out) (darkened \(Int(r.darkening * 100))%)")
+            } else {
+                let l = try store.add(processed: r.image, name: name)
+                print("added \(l.id)  \(l.name) (darkened \(Int(r.darkening * 100))%)")
+            }
+        } catch { print("\(error)"); exit(1) }
+    case "remove":
+        guard args.count > 2 else { print(usage); exit(1) }
+        do {
+            try store.remove(args[2])
+            var c = Config.load()
+            if c.lookId == args[2] { c.lookId = LookStore.defaultId; c.save() }
+            print("removed " + args[2])
+        } catch { print("\(error)"); exit(1) }
+    default: print(usage); exit(1)
+    }
 case "hooks":
     let installer = HookInstaller()
     do {

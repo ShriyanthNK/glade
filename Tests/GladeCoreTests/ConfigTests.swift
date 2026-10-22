@@ -17,6 +17,7 @@ final class ConfigTests: XCTestCase {
     func testRoundTrip() {
         var c = Config()
         c.chime = true; c.waitDelay = 7; c.doneDelay = 30; c.giveUpAfter = 0; c.snoozeUntil = 123
+        c.lookId = "user-abc"; c.sceneryOn = true
         c.save(to: dir + "/sub/config.json")
         XCTAssertEqual(Config.load(from: dir + "/sub/config.json"), c)
     }

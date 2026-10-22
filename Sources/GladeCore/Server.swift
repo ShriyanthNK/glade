@@ -21,6 +21,8 @@ public struct Config: Equatable {
     public var doneDelay = 20.0
     public var giveUpAfter = 180.0      // seconds before Mochi leaves on his own; 0 = never
     public var snoozeUntil = 0.0        // epoch seconds
+    public var lookId = LookStore.defaultId   // the backdrop shown behind the terminal
+    public var sceneryOn = false             // draw that backdrop behind the Glade terminal window
     public init() {}
 
     public static var path: String { supportDir + "/config.json" }
@@ -34,12 +36,15 @@ public struct Config: Equatable {
         if let v = j["doneDelay"] as? Double { c.doneDelay = v }
         if let v = j["giveUpAfter"] as? Double { c.giveUpAfter = v }
         if let v = j["snoozeUntil"] as? Double { c.snoozeUntil = v }
+        if let v = j["lookId"] as? String, !v.isEmpty { c.lookId = v }
+        if let v = j["sceneryOn"] as? Bool { c.sceneryOn = v }
         return c
     }
 
     public func save(to path: String = Config.path) {
         let j: [String: Any] = ["chime": chime, "waitDelay": waitDelay, "doneDelay": doneDelay,
-                                "giveUpAfter": giveUpAfter, "snoozeUntil": snoozeUntil]
+                                "giveUpAfter": giveUpAfter, "snoozeUntil": snoozeUntil,
+                                "lookId": lookId, "sceneryOn": sceneryOn]
         let dir = (path as NSString).deletingLastPathComponent
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         if let d = try? JSONSerialization.data(withJSONObject: j, options: [.prettyPrinted, .sortedKeys]) {
