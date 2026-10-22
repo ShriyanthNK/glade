@@ -57,6 +57,9 @@ struct HomePage: View {
                     .frame(height: 225)
                 }
             }
+            if !config.onboarded {
+                gettingStarted
+            } else {
             HStack(alignment: .top, spacing: 18) {
                 statusCard(title: "Claude Code",
                            line: hookLine, ok: hooks == .installed,
@@ -75,9 +78,54 @@ struct HomePage: View {
                     .frame(height: 96)
                 }
             }
+            }
             Spacer(minLength: 0)
         }
         .onAppear { refresh() }
+    }
+
+    // MARK: first run
+
+    private var gettingStarted: some View {
+        let connected = hooks == .installed
+        return PixelCard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Get started").font(Theme.title(18)).foregroundColor(Theme.paper)
+                    Spacer()
+                    Button("Skip") { config.onboarded = true; config.save() }.buttonStyle(SecondaryButtonStyle())
+                }
+                step("Connect Claude Code", "So Mochi knows when Claude is done or waiting.", done: connected,
+                     button: "Connect") { _ = try? HookInstaller().install(); refresh(); finishIfDone() }
+                step("Choose a look", "Pick a scene or turn one of your photos into one.", done: config.lookChosen,
+                     button: "Choose") { nav.page = .looks }
+                step("Open a Glade terminal", "Terminal.app with your look behind it.", done: config.sceneryOn,
+                     button: "Open") {
+                    config.sceneryOn = true; config.save()
+                    DispatchQueue.global().async { _ = TerminalBridge.openGladeWindow(); DispatchQueue.main.async { refresh(); finishIfDone() } }
+                }
+            }
+        }
+    }
+
+    private func step(_ title: String, _ detail: String, done: Bool, button: String, action: @escaping () -> Void) -> some View {
+        HStack(spacing: 12) {
+            Rectangle().fill(done ? Theme.sprout : Theme.ink).frame(width: 16, height: 16)
+                .overlay(Rectangle().stroke(done ? Theme.outline : Theme.line, lineWidth: 2))
+                .overlay(done ? Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy)).foregroundColor(Theme.outline) : nil)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(Theme.paper)
+                Text(detail).font(.system(size: 12)).foregroundColor(Theme.secondary)
+            }
+            Spacer()
+            if !done { Button(button, action: action).buttonStyle(SecondaryButtonStyle()) }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title + (done ? ", done" : ""))
+    }
+
+    private func finishIfDone() {
+        if hooks == .installed && config.lookChosen && config.sceneryOn { config.onboarded = true; config.save() }
     }
 
     private var hookLine: String {

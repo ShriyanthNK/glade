@@ -90,7 +90,7 @@ struct LooksPage: View {
 
     private func reload() { looks = store.all(); config = Config.load() }
 
-    private func select(_ id: String) { config.lookId = id; config.save() }
+    private func select(_ id: String) { config.lookId = id; config.lookChosen = true; config.save() }
 
     private func delete(_ look: Look) {
         do {

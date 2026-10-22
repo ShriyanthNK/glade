@@ -68,12 +68,14 @@ func sendEvent(_ event: String, flags: String = "", json: [String: Any] = [:]) -
 }
 
 let statusItem = StatusItemController()
+let appDelegate = AppDelegate()
 
 func runDaemon() {
     if daemonRunning() { exit(0) }   // single instance
     Config.migrateLegacy()
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)
+    app.delegate = appDelegate
     let controller = BuddyController()
     controller.start()
     statusItem.start()

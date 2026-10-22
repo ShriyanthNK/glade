@@ -23,6 +23,8 @@ public struct Config: Equatable {
     public var snoozeUntil = 0.0        // epoch seconds
     public var lookId = LookStore.defaultId   // the backdrop shown behind the terminal
     public var sceneryOn = false             // draw that backdrop behind the Glade terminal window
+    public var lookChosen = false            // the user has picked a look (onboarding step)
+    public var onboarded = false             // the Get started checklist is done or dismissed
     public init() {}
 
     public static var path: String { supportDir + "/config.json" }
@@ -38,13 +40,16 @@ public struct Config: Equatable {
         if let v = j["snoozeUntil"] as? Double { c.snoozeUntil = v }
         if let v = j["lookId"] as? String, !v.isEmpty { c.lookId = v }
         if let v = j["sceneryOn"] as? Bool { c.sceneryOn = v }
+        if let v = j["lookChosen"] as? Bool { c.lookChosen = v }
+        if let v = j["onboarded"] as? Bool { c.onboarded = v }
         return c
     }
 
     public func save(to path: String = Config.path) {
         let j: [String: Any] = ["chime": chime, "waitDelay": waitDelay, "doneDelay": doneDelay,
                                 "giveUpAfter": giveUpAfter, "snoozeUntil": snoozeUntil,
-                                "lookId": lookId, "sceneryOn": sceneryOn]
+                                "lookId": lookId, "sceneryOn": sceneryOn,
+                                "lookChosen": lookChosen, "onboarded": onboarded]
         let dir = (path as NSString).deletingLastPathComponent
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         if let d = try? JSONSerialization.data(withJSONObject: j, options: [.prettyPrinted, .sortedKeys]) {
