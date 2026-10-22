@@ -21,7 +21,7 @@ public struct Config: Equatable {
     public var chime = false
     public var waitDelay = 5.0
     public var doneDelay = 20.0
-    public var giveUpAfter = 180.0      // seconds before Mochi leaves on his own; 0 = never
+    public var giveUpAfter = 180.0      // seconds before Hoot leaves on its own; 0 = never
     public var snoozeUntil = 0.0        // epoch seconds
     public var lookId = LookStore.defaultId   // the backdrop shown behind the terminal
     public var sceneryOn = false             // draw that backdrop behind the Glade terminal window

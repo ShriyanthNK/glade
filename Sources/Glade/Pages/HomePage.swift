@@ -40,7 +40,7 @@ struct HomePage: View {
     var body: some View {
         let look = store.look(id: config.lookId)
         VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "Home", subtitle: "Everything Mochi is doing for you, at a glance.")
+            PageHeader(title: "Home", subtitle: "Everything Hoot is watching for you, at a glance.")
             PixelCard {
                 HStack(alignment: .top, spacing: 20) {
                     LookPreview(look: look, width: 400)
@@ -68,7 +68,7 @@ struct HomePage: View {
                 PixelCard {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Say hi").font(Theme.voice(11)).foregroundColor(Theme.peach)
-                        Text("See what Mochi does.").font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(Theme.paper)
+                        Text("See what Hoot does.").font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(Theme.paper)
                         Spacer(minLength: 4)
                         HStack {
                             Button("Waiting") { sendTest(done: false) }.buttonStyle(SecondaryButtonStyle())
@@ -95,7 +95,7 @@ struct HomePage: View {
                     Spacer()
                     Button("Skip") { config.onboarded = true; config.save() }.buttonStyle(SecondaryButtonStyle())
                 }
-                step("Connect Claude Code", "So Mochi knows when Claude is done or waiting.", done: connected,
+                step("Connect Claude Code", "So Hoot knows when Claude is done or waiting.", done: connected,
                      button: "Connect") { _ = try? HookInstaller().install(); refresh(); finishIfDone() }
                 step("Choose a look", "Pick a scene or turn one of your photos into one.", done: config.lookChosen,
                      button: "Choose") { nav.page = .looks }

@@ -28,10 +28,10 @@ struct AboutPage: View {
             PageHeader(title: "About", subtitle: "Glade \(version)")
             PixelCard {
                 HStack(spacing: 24) {
-                    MiniMochi(scale: 4)
+                    MiniHoot(scale: 4)
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Mochi lives here.").font(Theme.title(20)).foregroundColor(Theme.paper)
-                        Text("Glade watches Claude Code from the menu bar, pops Mochi up when it needs you, and gives your terminal a scene to sit in.")
+                        Text("Hoot lives here.").font(Theme.title(20)).foregroundColor(Theme.paper)
+                        Text("Glade watches Claude Code from the menu bar, pops Hoot up when it needs you, and gives your terminal a scene to sit in.")
                             .font(.system(size: 13)).foregroundColor(Theme.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }

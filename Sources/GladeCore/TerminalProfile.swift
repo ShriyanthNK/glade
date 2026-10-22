@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 
-/// Glade's Terminal.app profile: Mochi's palette, and a translucent plum background so the scene shows through.
+/// Glade's Terminal.app profile: Hoot's palette, and a translucent plum background so the scene shows through.
 public enum TerminalProfile {
     public static let name = "Glade"
     public static let columns = 110

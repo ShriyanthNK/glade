@@ -221,7 +221,7 @@ struct BuddyRoot: View {
                            onClose: { model.onDismiss() })
                     .scaleEffect(max(0.01, bubbleScale), anchor: UnitPoint(x: BubbleView.tailX / BubbleView.width, y: 1))
                     .padding(.trailing, rightPad)
-                    .padding(.bottom, tier == 0 || model.kind == .done ? spriteSize - 34 : spriteSize - 2)
+                    .padding(.bottom, spriteSize - 12)   // clears Hoot's ear tufts in every mood
                     .onTapGesture { model.onActivate() }
             }
             MascotCanvas(pose: pose, dy: k.dy, sx: k.sx, sy: k.sy)

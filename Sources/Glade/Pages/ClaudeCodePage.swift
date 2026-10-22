@@ -44,26 +44,26 @@ struct ClaudeCodePage: View {
     private var statusLineCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: 12) {
-                Toggle("Show Mochi in Claude Code's status line", isOn: Binding(
+                Toggle("Show Hoot in Claude Code's status line", isOn: Binding(
                     get: { line == .installed },
                     set: { on in runLine { on ? try StatusLineInstaller().install() : try StatusLineInstaller().uninstall() } }))
                     .toggleStyle(PixelToggleStyle())
                     .disabled(isOtherInUse || line == .unreadable)
                 VStack(alignment: .leading, spacing: 4) {
-                    preview("( ^‿^)", "all good", "█░░░░░░░░░ 12%", Theme.sprout)
-                    preview("( -_-)", "still here...", "███████░░░ 70%", Theme.peach)
-                    preview("( >_<)", "HELLOOO?", "█████████░ 92%", Theme.alert)
+                    preview("{o,o}", "all good", "█░░░░░░░░░ 12%", Theme.sprout)
+                    preview("{-,-}", "still here...", "███████░░░ 70%", Theme.peach)
+                    preview("{>,<}", "HELLOOO?", "█████████░ 92%", Theme.alert)
                 }
                 .padding(10).frame(maxWidth: .infinity, alignment: .leading).background(Theme.ink)
                 .overlay(Rectangle().stroke(Theme.line, lineWidth: 2))
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Preview: Mochi is calm under 60 percent context, impatient from 60, worried from 85")
+                .accessibilityLabel("Preview: Hoot is calm under 60 percent context, impatient from 60, worried from 85")
                 Text("He gets more impatient as Claude's context window fills up.")
                     .font(.system(size: 12)).foregroundColor(Theme.secondary)
                 if case .otherInUse(let cmd) = line {
-                    Text("You already have a status line (\(cmd)). Replacing it is safe: Glade keeps it and puts it back when you turn Mochi's off.")
+                    Text("You already have a status line (\(cmd)). Replacing it is safe: Glade keeps it and puts it back when you turn Hoot's off.")
                         .font(.system(size: 12)).foregroundColor(Theme.paper).fixedSize(horizontal: false, vertical: true)
-                    Button("Replace it with Mochi's") { runLine { try StatusLineInstaller().install(replacingOther: true) } }
+                    Button("Replace it with Hoot's") { runLine { try StatusLineInstaller().install(replacingOther: true) } }
                         .buttonStyle(SecondaryButtonStyle())
                 }
                 if !lineMessage.isEmpty { Text(lineMessage).font(.system(size: 12)).foregroundColor(Theme.paper) }
@@ -74,7 +74,7 @@ struct ClaudeCodePage: View {
     private var isOtherInUse: Bool { if case .otherInUse = line { return true } else { return false } }
 
     private func preview(_ face: String, _ word: String, _ bar: String, _ color: Color) -> some View {
-        (Text("🌱").foregroundColor(Theme.sprout) + Text(face + " ").foregroundColor(Theme.peach)
+        (Text("🦉").foregroundColor(Theme.sprout) + Text(face + " ").foregroundColor(Theme.peach)
             + Text(word).bold().foregroundColor(color) + Text("  Opus · my-project  ").foregroundColor(Theme.secondary)
             + Text(bar).foregroundColor(color))
             .font(.system(size: 12, design: .monospaced))

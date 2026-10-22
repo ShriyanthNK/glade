@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// Glade's look: the same plum, paper, peach and sprout as Mochi and the website.
+/// Glade's look: the same plum, paper and peach as Hoot and the website.
 /// Square corners and hard offset shadows keep everything on a pixel grid.
 enum Theme {
     static let ink = Color(hex: 0x2A1A26)          // window background
@@ -102,14 +102,14 @@ struct PageHeader: View {
     }
 }
 
-/// Mochi, idling: the same sprite and pose code as the pop-up, drawn at an integer pixel scale.
-struct MiniMochi: View {
+/// Hoot, idling: the same sprite code as the pop-up, drawn at an integer pixel scale.
+struct MiniHoot: View {
     var scale: CGFloat = 4
     private var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: reduceMotion)) { tl in
-            let sprite = makeSprite(Pose(t: reduceMotion ? 0 : tl.date.timeIntervalSinceReferenceDate, mood: .waiting, tier: 0, look: 0))
+            let sprite = makeSprite(hoot: .calm, t: reduceMotion ? 0.4 : tl.date.timeIntervalSinceReferenceDate)
             Canvas { ctx, _ in
                 for y in 0..<32 {
                     var x = 0
@@ -126,7 +126,7 @@ struct MiniMochi: View {
             }
             .frame(width: 32 * scale, height: 32 * scale)
         }
-        .accessibilityLabel("Mochi")
+        .accessibilityLabel("Hoot")
     }
 }
 

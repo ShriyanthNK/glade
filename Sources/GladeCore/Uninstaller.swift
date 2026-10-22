@@ -23,7 +23,7 @@ public struct Uninstaller {
                                        previousPath: supportDir + "/statusline.previous.json")
         if FileManager.default.fileExists(atPath: settingsPath) {
             if try hooks.uninstall() != nil { done.append("Removed Glade's Claude Code hooks") }
-            if try line.uninstall() != nil { done.append("Removed Mochi's status line") }
+            if try line.uninstall() != nil { done.append("Removed Hoot's status line") }
         }
         let fm = FileManager.default
         for link in links {

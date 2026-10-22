@@ -1,6 +1,6 @@
 # Glade
 
-A Mac app for people who live in Claude Code. **Mochi**, a pixel-art dumpling with a sprout, pops up in the
+A Mac app for people who live in Claude Code. **Hoot**, a pixel-art owl, pops up in the
 corner of your screen when Claude is done or waiting on you, then gets out of the way.
 
 Native Swift/SwiftUI. Lives in the menu bar; the Glade window ((Home, Looks, Terminal, Alerts, Claude Code, About)) opens from its icon. macOS 13+.
@@ -16,7 +16,7 @@ toolchain. Restart running Claude Code sessions afterwards.
 Upgrading from claude-buddy: `install.sh` copies your settings, replaces the old hooks and removes the old install.
 A `claude-buddy` command stays linked to `glade` so old scripts keep working.
 
-    glade test                # show Mochi now (waiting)
+    glade test                # show Hoot now (waiting)
     glade test done           # celebration pose
     glade test --age 90       # preview the impatient tiers
     glade chime on|off        # soft chime (off by default)
@@ -27,7 +27,7 @@ A `claude-buddy` command stays linked to `glade` so old scripts keep working.
     glade hooks install|uninstall|status         manage the Claude Code hooks
     glade scenery on|off|status      show the look behind Glade terminal windows
     glade terminal open        open a Terminal.app window in the Glade profile
-    glade statusline install [--replace]|uninstall|status   Mochi in Claude Code's status line
+    glade statusline install [--replace]|uninstall|status   Hoot in Claude Code's status line
     glade hide | quit
 | quit
 | quit
@@ -43,15 +43,16 @@ A `claude-buddy` command stays linked to `glade` so old scripts keep working.
 | UserPromptSubmit, PostToolUse | hide (or cancel the pending show) immediately |
 
 - Smart alerts (on by default): if the app running the session is frontmost and you used the keyboard or mouse in
-  the last 8 seconds, Mochi stays away and checks again every 3 seconds; he hides himself once you are typing
+  the last 8 seconds, Hoot stays away and checks again every 3 seconds, and hides once you are typing
   in the terminal. `glade test` ignores this.
 - Events are matched by session, so a reply in one session doesn't hide another's buddy.
 - The hook script returns in about 10 ms; the work runs in a detached background job.
-- Click Mochi or its bubble to jump to the terminal app Claude runs in (detected from
+- Click Hoot or its bubble to jump to the terminal app Claude runs in (detected from
   `__CFBundleIdentifier`, falling back to any running known terminal). `x` just dismisses.
-- Waiting gets more impatient: calm and tapping, then a "?" sign after 1 min, then "!!" and steam after 2 min.
+- Waiting gets more impatient: Hoot taps a foot with a wide-eyed look, then looks annoyed (sweat drop and a "?") after
+  1 min, then angry (brows, "!!" and a puffed-up body) after 2 min.
   At 3 min he gives up and leaves (config `giveUpAfter`, 0 = never).
-- Click-through everywhere except on Mochi and the bubble. Never takes focus.
+- Click-through everywhere except on Hoot and the bubble. Never takes focus.
 
 ## Develop
 

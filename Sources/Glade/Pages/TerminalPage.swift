@@ -21,7 +21,7 @@ struct TerminalPage: View {
                     LookPreview(look: look, width: 300)
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Glade terminal").font(Theme.title(20)).foregroundColor(Theme.paper)
-                        Text("Opens Terminal.app in Mochi's colors with a see-through background. Your regular Terminal windows are left alone.")
+                        Text("Opens Terminal.app in Hoot's colors with a see-through background. Your regular Terminal windows are left alone.")
                             .font(.system(size: 13)).foregroundColor(Theme.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 4)

@@ -77,7 +77,7 @@ final class BuddyController {
         pending = t
     }
 
-    /// Shows Mochi unless the user is already looking at the session. While they are, check again every few
+    /// Shows Hoot unless the user is already looking at the session. While they are, check again every few
     /// seconds: the hooks cancel this as soon as Claude moves on, and if they look away it still gets through.
     private func attempt(_ kind: Mood, _ m: Message, force: Bool) {
         if !force, Config.load().smartAlerts, userIsLookingAtSession(m.bundle, activeWithin: 8) {

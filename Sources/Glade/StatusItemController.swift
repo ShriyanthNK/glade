@@ -30,8 +30,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(open)
         menu.addItem(.separator())
 
-        menu.addItem(action("Show Mochi (waiting)", #selector(testWaiting)))
-        menu.addItem(action("Show Mochi (done)", #selector(testDone)))
+        menu.addItem(action("Show Hoot (waiting)", #selector(testWaiting)))
+        menu.addItem(action("Show Hoot (done)", #selector(testDone)))
         menu.addItem(.separator())
 
         let snooze = NSMenuItem(title: "Snooze", action: nil, keyEquivalent: "")
@@ -63,9 +63,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func openGlade() { AppWindowController.shared.show() }
     @objc private func quit() { NSApp.terminate(nil) }
 
-    /// Mochi's resting pose as a small colored icon, drawn from the same sprite as the pop-up.
+    /// Hoot's resting pose as a small colored icon, drawn from the same sprite as the pop-up.
     static func glyph() -> NSImage {
-        let sprite = makeSprite(Pose(t: 0, mood: .waiting, tier: 0, look: 0))
+        let sprite = makeSprite(hoot: .calm, t: 0.4)
         var minX = 32, maxX = 0, minY = 32, maxY = 0
         for y in 0..<32 { for x in 0..<32 where sprite.get(x, y) != 0 {
             minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)

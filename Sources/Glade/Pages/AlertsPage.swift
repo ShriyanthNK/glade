@@ -11,17 +11,17 @@ struct AlertsPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "Alerts", subtitle: "When Mochi shows up, and how patient he is.")
+            PageHeader(title: "Alerts", subtitle: "When Hoot shows up, and how patient it is.")
             PixelCard {
                 VStack(alignment: .leading, spacing: 18) {
-                    row("When Claude needs you", "Mochi waits \(Int(config.waitDelay)) s before he appears.",
+                    row("When Claude needs you", "Hoot waits \(Int(config.waitDelay)) s before showing up.",
                         bind(\.waitDelay), 0...120, step: 1)
                     Rectangle().fill(Theme.line).frame(height: 1)
-                    row("When Claude is done", "Mochi waits \(Int(config.doneDelay)) s before he appears.",
+                    row("When Claude is done", "Hoot waits \(Int(config.doneDelay)) s before showing up.",
                         bind(\.doneDelay), 0...300, step: 5)
                     Rectangle().fill(Theme.line).frame(height: 1)
                     row("When you don't answer",
-                        config.giveUpAfter == 0 ? "Mochi stays until you do." : "Mochi gives up and leaves after \(Int(config.giveUpAfter)) s.",
+                        config.giveUpAfter == 0 ? "Hoot stays until you do." : "Hoot gives up and leaves after \(Int(config.giveUpAfter)) s.",
                         bind(\.giveUpAfter), 0...1800, step: 30, zeroLabel: "Never")
                 }
             }
@@ -29,7 +29,7 @@ struct AlertsPage: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Toggle("Stay quiet while I'm already in the terminal", isOn: bind(\.smartAlerts)).toggleStyle(PixelToggleStyle())
                     Toggle("Say what Claude wants or did, not just \"waiting\"", isOn: bind(\.showDetails)).toggleStyle(PixelToggleStyle())
-                    Toggle("Play a soft chime when Mochi appears", isOn: bind(\.chime)).toggleStyle(PixelToggleStyle())
+                    Toggle("Play a soft chime when Hoot appears", isOn: bind(\.chime)).toggleStyle(PixelToggleStyle())
                     HStack {
                         Text(snoozeDescription(config) ?? "Alerts are on.")
                             .font(.system(size: 13, design: .rounded)).foregroundColor(Theme.paper)
@@ -43,8 +43,8 @@ struct AlertsPage: View {
                 }
             }
             HStack {
-                Button("Show Mochi (waiting)") { sendTest(done: false) }.buttonStyle(SecondaryButtonStyle())
-                Button("Show Mochi (done)") { sendTest(done: true) }.buttonStyle(SecondaryButtonStyle())
+                Button("Show Hoot (waiting)") { sendTest(done: false) }.buttonStyle(SecondaryButtonStyle())
+                Button("Show Hoot (done)") { sendTest(done: true) }.buttonStyle(SecondaryButtonStyle())
             }
             Spacer(minLength: 0)
         }

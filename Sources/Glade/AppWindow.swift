@@ -128,10 +128,10 @@ struct Sidebar: View {
             }
             LinearGradient(colors: [Theme.ink, Theme.ink.opacity(0.0)], startPoint: .top, endPoint: .center)
             VStack(alignment: .leading, spacing: 0) {
-                MiniMochi(scale: 4).padding(.top, 30)
+                MiniHoot(scale: 4).padding(.top, 30)
                 Text("Glade").font(.system(size: 34, weight: .heavy, design: .rounded)).foregroundColor(Theme.paper)
                     .padding(.top, 2)
-                Text("Mochi's on watch.").font(Theme.voice(11)).foregroundColor(Theme.peach).padding(.top, 2)
+                Text("Hoot's on watch.").font(Theme.voice(11)).foregroundColor(Theme.peach).padding(.top, 2)
                 VStack(spacing: 4) {
                     ForEach(AppPage.allCases) { page in row(page) }
                 }

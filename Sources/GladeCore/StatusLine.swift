@@ -1,27 +1,27 @@
 import Foundation
 
-/// Mochi in Claude Code's status line: his mood follows how full the context window is.
+/// Hoot in Claude Code's status line: its mood follows how full the context window is.
 /// Calm under 60%, impatient from 60%, worried from 85%. Uses plutil (always present on macOS) to read
 /// the JSON Claude Code sends, so there is no jq dependency.
 public let statusLineScript = #"""
 #!/bin/sh
-# Glade status line: Mochi's mood follows how full Claude's context window is.
+# Glade status line: Hoot's mood follows how full Claude's context window is.
 input=$(cat)
 get() { printf '%s' "$input" | /usr/bin/plutil -extract "$1" raw -o - - 2>/dev/null; }
 model=$(get model.display_name); [ -n "$model" ] || model="Claude"
 dir=$(get workspace.current_dir); dir=${dir##*/}
 pct=$(get context_window.used_percentage); pct=${pct%%.*}
 case "$pct" in ''|*[!0-9]*) pct=0 ;; esac
-if [ "$pct" -ge 85 ]; then face='( >_<)'; word='HELLOOO?'; c=196
-elif [ "$pct" -ge 60 ]; then face='( -_-)'; word='still here...'; c=215
-else face='( ^‿^)'; word='all good'; c=114; fi
+if [ "$pct" -ge 85 ]; then face='{>,<}'; word='HELLOOO?'; c=196
+elif [ "$pct" -ge 60 ]; then face='{-,-}'; word='still here...'; c=215
+else face='{o,o}'; word='all good'; c=114; fi
 filled=$((pct / 10)); [ "$filled" -gt 10 ] && filled=10
 bar=''; i=1
 while [ "$i" -le 10 ]; do
   if [ "$i" -le "$filled" ]; then bar="${bar}█"; else bar="${bar}░"; fi
   i=$((i + 1))
 done
-printf '\033[38;5;71m🌱\033[38;5;223m%s \033[1;38;5;%sm%s\033[0m  \033[38;5;180m%s\033[0m' "$face" "$c" "$word" "$model"
+printf '\033[38;5;180m🦉\033[38;5;223m%s \033[1;38;5;%sm%s\033[0m  \033[38;5;180m%s\033[0m' "$face" "$c" "$word" "$model"
 [ -n "$dir" ] && printf ' · \033[38;5;223m%s\033[0m' "$dir"
 printf '  \033[38;5;%sm%s\033[0m %s%%\n' "$c" "$bar" "$pct"
 
@@ -31,7 +31,7 @@ public enum StatusLineError: Error, Equatable, CustomStringConvertible {
     case otherInUse(String)
     public var description: String {
         switch self {
-        case .otherInUse(let cmd): return "Claude Code already uses a status line (\(cmd)). Replace it to use Mochi's; Glade can restore it later."
+        case .otherInUse(let cmd): return "Claude Code already uses a status line (\(cmd)). Replace it to use Hoot's; Glade can restore it later."
         }
     }
 }

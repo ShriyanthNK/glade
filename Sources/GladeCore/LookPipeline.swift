@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 import ImageIO
 
-/// Turns any photo into a Mochi-style pixel backdrop: cover-crop to 16:9, scale to 480x270, reduce to a
+/// Turns any photo into a Hoot-style pixel backdrop: cover-crop to 16:9, scale to 480x270, reduce to a
 /// limited palette with ordered dithering, then darken toward plum just enough that light terminal text
 /// stays readable (WCAG 4.5:1) on top of it.
 public enum LookPipeline {

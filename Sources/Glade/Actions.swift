@@ -22,7 +22,7 @@ func snoozeDescription(_ c: Config) -> String? {
     return "Snoozed until " + f.string(from: Date(timeIntervalSince1970: c.snoozeUntil))
 }
 
-/// Shows Mochi now, through the same socket path the Claude Code hooks use.
+/// Shows Hoot now, through the same socket path the Claude Code hooks use.
 func sendTest(done: Bool, age: Double = 0) {
     var json: [String: Any] = ["session_id": "test", "cwd": FileManager.default.currentDirectoryPath]
     if done {

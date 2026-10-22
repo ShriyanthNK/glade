@@ -12,7 +12,7 @@ let package = Package(
         .target(name: "GladeCore"),
         // The app and the `glade` CLI (one binary: no args = background app).
         .executableTarget(name: "Glade", dependencies: ["GladeCore"]),
-        .testTarget(name: "GladeCoreTests", dependencies: ["GladeCore"]),
+        .testTarget(name: "GladeCoreTests", dependencies: ["GladeCore"], resources: [.copy("Fixtures")]),
     ],
     swiftLanguageVersions: [.v5]
 )

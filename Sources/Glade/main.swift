@@ -4,13 +4,13 @@ import SwiftUI
 
 func usage() {
     print("""
-    glade  - Mochi, a pixel mascot that shows when Claude Code is waiting on you
+    glade  - Hoot, a pixel owl that shows when Claude Code is waiting on you
 
       glade test [wait|done] [--age SECONDS]   show the buddy right now
       glade snooze MINUTES|forever|clear      silence the buddy
       glade open [home|looks|alerts|claude-code|about]  open the Glade window
       glade hooks install|uninstall|status            manage the Claude Code hooks
-      glade statusline install [--replace]|uninstall|status   Mochi in Claude Code's status line
+      glade statusline install [--replace]|uninstall|status   Hoot in Claude Code's status line
       glade scenery on|off|status                     show the look behind Glade terminals
       glade terminal open                             open a Terminal.app window in the Glade profile
       glade look list|use ID|add PHOTO|remove ID      manage backdrops (add --out FILE.png just exports)
@@ -53,7 +53,7 @@ func sendEvent(_ event: String, flags: String = "", json: [String: Any] = [:]) -
     let now = Date()
     model.visible = true
     model.kind = kind
-    model.message = kind == .done ? "" : "Claude needs your permission to use Bash"
+    model.message = kind == .done ? "Refactored the parser and fixed 3 failing tests." : "Run: npm test --coverage"
     model.project = "my-project"
     model.shownAt = now.addingTimeInterval(-2)
     model.phaseStart = now.addingTimeInterval(-(enter ?? 5))
