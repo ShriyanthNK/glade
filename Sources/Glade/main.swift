@@ -6,7 +6,7 @@ func usage() {
     print("""
     glade  - Hoot, a pixel owl that shows when Claude Code is waiting on you
 
-      glade test [wait|done] [--age SECONDS]   show the buddy right now
+      glade test [wait|done] [--age SECONDS]   show Hoot right now
       glade snooze MINUTES|forever|clear      silence the buddy
       glade open [home|looks|alerts|claude-code|about]  open the Glade window
       glade hooks install|uninstall|status            manage the Claude Code hooks
@@ -102,7 +102,7 @@ case "test":
     }
     guard ensureDaemon() else { print("could not start Glade.app"); exit(1) }
     sendTest(done: kind == "done", age: Double(age) ?? 0)
-    print("buddy sent (\(kind))")
+    print("hoot sent (\(kind))")
 case "snooze":
     guard let c = applySnooze(args.count > 1 ? args[1] : "") else { print("usage: glade snooze MINUTES|forever|clear"); exit(1) }
     print(c.snoozeUntil > 0 ? "snoozed" : "snooze cleared")
