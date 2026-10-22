@@ -29,6 +29,8 @@ public struct Config: Equatable {
     public var onboarded = false             // the Get started checklist is done or dismissed
     public var smartAlerts = true            // stay quiet while the user is already in the terminal
     public var showDetails = true            // say what Claude wants or did, not just "Claude's waiting"
+    public var terminalFont = ""             // family name for Glade terminals; "" = automatic (JetBrains Mono if installed, else Menlo)
+    public var terminalFontSize = 14.0       // points
     public init() {}
 
     public static var path: String { supportDir + "/config.json" }
@@ -48,6 +50,8 @@ public struct Config: Equatable {
         if let v = j["onboarded"] as? Bool { c.onboarded = v }
         if let v = j["smartAlerts"] as? Bool { c.smartAlerts = v }
         if let v = j["showDetails"] as? Bool { c.showDetails = v }
+        if let v = j["terminalFont"] as? String { c.terminalFont = v }
+        if let v = j["terminalFontSize"] as? Double, TerminalFonts.sizeRange.contains(v) { c.terminalFontSize = v }
         return c
     }
 
@@ -56,7 +60,8 @@ public struct Config: Equatable {
                                 "giveUpAfter": giveUpAfter, "snoozeUntil": snoozeUntil,
                                 "lookId": lookId, "sceneryOn": sceneryOn,
                                 "lookChosen": lookChosen, "onboarded": onboarded,
-                                "smartAlerts": smartAlerts, "showDetails": showDetails]
+                                "smartAlerts": smartAlerts, "showDetails": showDetails,
+                                "terminalFont": terminalFont, "terminalFontSize": terminalFontSize]
         let dir = (path as NSString).deletingLastPathComponent
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         if let d = try? JSONSerialization.data(withJSONObject: j, options: [.prettyPrinted, .sortedKeys]) {

@@ -18,7 +18,7 @@ struct LooksPage: View {
             HStack(alignment: .top, spacing: 20) {
                 LookPreview(look: current, width: 400)
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("In use").font(Theme.voice(11)).foregroundColor(Theme.peach)
+                    Text("In use").font(Theme.label(13)).foregroundColor(Theme.peach)
                     Text(current.name).font(Theme.title(22)).foregroundColor(Theme.paper)
                     Text(current.builtin ? "Built in to Glade." : "Made from your photo, on this Mac.")
                         .font(.system(size: 13)).foregroundColor(Theme.secondary)

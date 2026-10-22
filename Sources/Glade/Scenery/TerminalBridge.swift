@@ -40,9 +40,26 @@ enum TerminalBridge {
         return r.ok ? (SceneryMath.parseWindowIDs(r.output), nil) : ([], r.output)
     }
 
+    /// Changes the font of the existing "Glade" profile in Terminal, so open Glade terminals update right away.
+    /// Returns an error message, or nil on success.
+    static func applyFont(postScript: String, size: Double) -> String? {
+        guard isRunning else { return "Terminal isn't open. The font will be used the next time you open a Glade terminal." }
+        let r = osascript("""
+        tell application "Terminal"
+          set font name of settings set "\(TerminalProfile.name)" to "\(postScript)"
+          set font size of settings set "\(TerminalProfile.name)" to \(Int(size))
+        end tell
+        """)
+        if r.ok { return nil }
+        return r.output.contains("settings set") ? "Open a Glade terminal once first; then fonts can be changed live." : "Couldn't change Terminal's font: \(r.output)"
+    }
+
     /// Writes the Glade profile and opens it: Terminal imports it and opens a window using it.
     static func openGladeWindow() -> String? {
-        do { try TerminalProfile.write(to: profilePath) } catch { return "Couldn't write the profile: \(error.localizedDescription)" }
+        let cfg = Config.load()
+        let font = TerminalFonts.resolveName(family: cfg.terminalFont, choices: TerminalFonts.installed())
+        do { try TerminalProfile.write(to: profilePath, fontName: font, fontSize: cfg.terminalFontSize) }
+        catch { return "Couldn't write the profile: \(error.localizedDescription)" }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         p.arguments = ["-a", "Terminal", profilePath]

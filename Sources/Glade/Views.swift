@@ -1,4 +1,5 @@
 import SwiftUI
+import GladeCore
 import AppKit
 
 let winW: CGFloat = 290
@@ -101,13 +102,13 @@ struct BubbleView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: 6) {
                 Text(reveal(title, from: 0))
-                    .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                    .font(.custom(BrandFonts.voice, size: 13))
                     .foregroundColor(tier == 2 ? Color(hex: 0xc2203a) : inkColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
                 Button(action: onClose) {
                     Text("x")
-                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                        .font(.custom(BrandFonts.voice, size: 12))
                         .foregroundColor(inkColor)
                         .frame(width: 16, height: 16)
                         .background(Color(hex: 0xffd9b8))
@@ -117,14 +118,14 @@ struct BubbleView: View {
             }
             if !message.isEmpty {
                 Text(reveal(message, from: title.count))
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .font(.custom(BrandFonts.mono, size: 12))
                     .foregroundColor(inkColor.opacity(0.85))
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if !project.isEmpty, chars > title.count + message.count {
                 Text("> " + project)
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .font(.custom(BrandFonts.voice, size: 12))
                     .foregroundColor(.white)
                     .lineLimit(1)
                     .padding(.horizontal, 6).padding(.vertical, 2)

@@ -54,7 +54,7 @@ struct AlertsPage: View {
     private func row(_ title: String, _ detail: String, _ value: Binding<Double>, _ range: ClosedRange<Double>, step: Double, zeroLabel: String? = nil) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(Theme.paper)
+                Text(title).font(Theme.ui(15)).foregroundColor(Theme.paper)
                 Text(detail).font(.system(size: 12)).foregroundColor(Theme.secondary)
             }
             Spacer()

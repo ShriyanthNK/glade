@@ -1,7 +1,11 @@
 import SwiftUI
 import GladeCore
 
+private struct SnapshotKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues { var isSnapshot: Bool { get { self[SnapshotKey.self] } set { self[SnapshotKey.self] = newValue } } }
+
 struct TerminalPage: View {
+    @Environment(\.isSnapshot) private var isSnapshot
     @ObservedObject private var nav = AppNav.shared
     @State private var config = Config.load()
     @State private var message = ""
@@ -13,12 +17,19 @@ struct TerminalPage: View {
     }
 
     var body: some View {
+        // ImageRenderer (the ui-snapshot developer command) cannot draw scroll views, so it asks for the plain content
+        Group { if isSnapshot { content } else { ScrollView { content } } }
+        .onAppear { config = Config.load(); showing = SceneryController.shared.activeCount }
+        .onReceive(ticker) { _ in showing = SceneryController.shared.activeCount }
+    }
+
+    private var content: some View {
         let look = LookStore().look(id: config.lookId)
-        VStack(alignment: .leading, spacing: 22) {
+        return VStack(alignment: .leading, spacing: 22) {
             PageHeader(title: "Terminal", subtitle: "Put your look behind the terminal you run Claude Code in. Terminal.app for now.")
             PixelCard {
                 HStack(alignment: .top, spacing: 20) {
-                    LookPreview(look: look, width: 300)
+                    LookPreview(look: look, width: 264)
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Glade terminal").font(Theme.title(20)).foregroundColor(Theme.paper)
                         Text("Opens Terminal.app in Hoot's colors with a see-through background. Your regular Terminal windows are left alone.")
@@ -26,12 +37,12 @@ struct TerminalPage: View {
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 4)
                         HStack {
-                            Button("Open a Glade terminal") { openTerminal() }.buttonStyle(PrimaryButtonStyle())
-                            Button("Change look") { nav.page = .looks }.buttonStyle(SecondaryButtonStyle())
+                            Button("Open a Glade terminal") { openTerminal() }.buttonStyle(PrimaryButtonStyle()).fixedSize()
+                            Button("Change look") { nav.page = .looks }.buttonStyle(SecondaryButtonStyle()).fixedSize()
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: 169)
+                    .frame(height: 148)
                 }
             }
             PixelCard {
@@ -43,13 +54,13 @@ struct TerminalPage: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            TerminalFontCard()
             if !message.isEmpty {
                 Text(message).font(.system(size: 12)).foregroundColor(Theme.paper)
             }
             Spacer(minLength: 0)
         }
-        .onAppear { config = Config.load(); showing = SceneryController.shared.activeCount }
-        .onReceive(ticker) { _ in showing = SceneryController.shared.activeCount }
+        .padding(.trailing, 8)
     }
 
     private var statusLine: String {

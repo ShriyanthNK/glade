@@ -45,7 +45,7 @@ struct HomePage: View {
                 HStack(alignment: .top, spacing: 20) {
                     LookPreview(look: look, width: 400)
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Your look").font(Theme.voice(11)).foregroundColor(Theme.peach)
+                        Text("Your look").font(Theme.label(13)).foregroundColor(Theme.peach)
                         Text(look.name).font(Theme.title(22)).foregroundColor(Theme.paper)
                         Text("Pick a scene, or turn any of your photos into one.")
                             .font(.system(size: 13)).foregroundColor(Theme.secondary)
@@ -67,8 +67,8 @@ struct HomePage: View {
                 snoozeCard
                 PixelCard {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Say hi").font(Theme.voice(11)).foregroundColor(Theme.peach)
-                        Text("See what Hoot does.").font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(Theme.paper)
+                        Text("Say hi").font(Theme.label(13)).foregroundColor(Theme.peach)
+                        Text("See what Hoot does.").font(Theme.ui(15)).foregroundColor(Theme.paper)
                         Spacer(minLength: 4)
                         HStack {
                             Button("Waiting") { sendTest(done: false) }.buttonStyle(SecondaryButtonStyle())
@@ -114,7 +114,7 @@ struct HomePage: View {
                 .overlay(Rectangle().stroke(done ? Theme.outline : Theme.line, lineWidth: 2))
                 .overlay(done ? Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy)).foregroundColor(Theme.outline) : nil)
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(Theme.paper)
+                Text(title).font(Theme.ui(15)).foregroundColor(Theme.paper)
                 Text(detail).font(.system(size: 12)).foregroundColor(Theme.secondary)
             }
             Spacer()
@@ -142,10 +142,10 @@ struct HomePage: View {
     private func statusCard(title: String, line: String, ok: Bool, button: String, action: @escaping () -> Void) -> some View {
         PixelCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text(title).font(Theme.voice(11)).foregroundColor(Theme.peach)
+                Text(title).font(Theme.label(13)).foregroundColor(Theme.peach)
                 HStack(spacing: 8) {
                     Rectangle().fill(ok ? Theme.sprout : Theme.sparkle).frame(width: 10, height: 10)
-                    Text(line).font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(Theme.paper)
+                    Text(line).font(Theme.ui(15)).foregroundColor(Theme.paper)
                 }
                 Spacer(minLength: 4)
                 Button(button, action: action).buttonStyle(SecondaryButtonStyle())
@@ -158,10 +158,10 @@ struct HomePage: View {
         let s = snoozeDescription(config)
         return PixelCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Alerts").font(Theme.voice(11)).foregroundColor(Theme.peach)
+                Text("Alerts").font(Theme.label(13)).foregroundColor(Theme.peach)
                 HStack(spacing: 8) {
                     Rectangle().fill(s == nil ? Theme.sprout : Theme.sparkle).frame(width: 10, height: 10)
-                    Text(s ?? "On").font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(Theme.paper)
+                    Text(s ?? "On").font(Theme.ui(15)).foregroundColor(Theme.paper)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 4)

@@ -6,12 +6,15 @@ public struct Uninstaller {
     public let supportDir: String
     public let settingsPath: String
     public let links: [String]
+    public let fontsDestination: String
 
     public init(supportDir: String = GladeCore.supportDir, settingsPath: String = claudeSettingsPath,
-                links: [String] = [NSHomeDirectory() + "/.local/bin/glade", NSHomeDirectory() + "/.local/bin/claude-buddy"]) {
+                links: [String] = [NSHomeDirectory() + "/.local/bin/glade", NSHomeDirectory() + "/.local/bin/claude-buddy"],
+                fontsDestination: String = NSHomeDirectory() + "/Library/Fonts") {
         self.supportDir = supportDir
         self.settingsPath = settingsPath
         self.links = links
+        self.fontsDestination = fontsDestination
     }
 
     /// Returns a human-readable list of what was done. Throws before changing anything if settings.json is unreadable.
@@ -26,6 +29,8 @@ public struct Uninstaller {
             if try line.uninstall() != nil { done.append("Removed Hoot's status line") }
         }
         let fm = FileManager.default
+        let fonts = FontInstaller(destination: fontsDestination, marker: supportDir + "/installed-fonts.txt")
+        if let removed = try? fonts.uninstall(), !removed.isEmpty { done.append("Removed the fonts Glade installed (\(removed.joined(separator: ", ")))") }
         for link in links {
             // only links that point into a Glade / claude-buddy install, never someone else's `glade`
             guard let dest = try? fm.destinationOfSymbolicLink(atPath: link),

@@ -90,16 +90,7 @@ struct AppRoot: View {
             Sidebar(nav: nav)
             ZStack {
                 Theme.deep
-                Group {
-                    switch nav.page {
-                    case .home: HomePage()
-                    case .looks: LooksPage()
-                    case .terminal: TerminalPage()
-                    case .alerts: AlertsPage()
-                    case .claudeCode: ClaudeCodePage()
-                    case .about: AboutPage()
-                    }
-                }
+                PageView(page: nav.page)
                 .padding(.horizontal, 32)
                 .padding(.top, 40)
                 .padding(.bottom, 24)
@@ -108,6 +99,22 @@ struct AppRoot: View {
         }
         .frame(width: 920, height: 620)
         .preferredColorScheme(.dark)
+    }
+}
+
+struct PageView: View {
+    let page: AppPage
+    var body: some View {
+        Group {
+            switch page {
+            case .home: HomePage()
+            case .looks: LooksPage()
+            case .terminal: TerminalPage()
+            case .alerts: AlertsPage()
+            case .claudeCode: ClaudeCodePage()
+            case .about: AboutPage()
+            }
+        }
     }
 }
 
@@ -129,9 +136,9 @@ struct Sidebar: View {
             LinearGradient(colors: [Theme.ink, Theme.ink.opacity(0.0)], startPoint: .top, endPoint: .center)
             VStack(alignment: .leading, spacing: 0) {
                 MiniHoot(scale: 4).padding(.top, 30)
-                Text("Glade").font(.system(size: 34, weight: .heavy, design: .rounded)).foregroundColor(Theme.paper)
+                Text("Glade").font(Theme.title(38)).foregroundColor(Theme.paper)
                     .padding(.top, 2)
-                Text("Hoot's on watch.").font(Theme.voice(11)).foregroundColor(Theme.peach).padding(.top, 2)
+                Text("Hoot's on watch.").font(Theme.label(14)).foregroundColor(Theme.peach).padding(.top, 2)
                 VStack(spacing: 4) {
                     ForEach(AppPage.allCases) { page in row(page) }
                 }
@@ -152,7 +159,7 @@ struct Sidebar: View {
                 Text(page.title)
                 Spacer()
             }
-            .font(.system(size: 14, weight: selected ? .bold : .medium, design: .rounded))
+            .font(selected ? Theme.label(16) : Theme.ui(16))
             .foregroundColor(selected ? Theme.outline : Theme.paper)
             .padding(.horizontal, 12).padding(.vertical, 9)
             .background(selected ? Theme.peach : Color.clear)

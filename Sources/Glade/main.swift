@@ -11,6 +11,7 @@ func usage() {
       glade open [home|looks|alerts|claude-code|about]  open the Glade window
       glade hooks install|uninstall|status            manage the Claude Code hooks
       glade statusline install [--replace]|uninstall|status   Hoot in Claude Code's status line
+      glade font status|list|set FAMILY [SIZE]|install|apply   terminal font for Glade terminals
       glade scenery on|off|status                     show the look behind Glade terminals
       glade terminal open                             open a Terminal.app window in the Glade profile
       glade look list|use ID|add PHOTO|remove ID      manage backdrops (add --out FILE.png just exports)
@@ -86,6 +87,7 @@ func runDaemon() {
     app.run()
 }
 
+BrandFonts.register()
 let args = Array(CommandLine.arguments.dropFirst())
 switch args.first {
 case nil: runDaemon()
@@ -174,6 +176,42 @@ case "statusline":
         default: print("usage: glade statusline install [--replace]|uninstall|status"); exit(1)
         }
     } catch { print("\(error)"); exit(1) }
+case "ui-snapshot":   // developer tool: render one page of the window to a PNG (native controls such as menus draw as placeholders)
+    guard args.count > 1 else { print("usage: glade ui-snapshot FILE.png [home|looks|terminal|alerts|claude-code|about] [HEIGHT]"); exit(1) }
+    let page = AppPage(rawValue: args.count > 2 ? args[2] : "home") ?? .home
+    let height = args.count > 3 ? Double(args[3]) ?? 900 : 900
+    MainActor.assumeIsolated {
+        _ = NSApplication.shared
+        let view = PageView(page: page).padding(32).frame(width: 692, height: CGFloat(height), alignment: .topLeading).background(Theme.deep).preferredColorScheme(.dark).environment(\.isSnapshot, true)
+        let r = ImageRenderer(content: view); r.scale = 2
+        guard let img = r.nsImage, let tiff = img.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: .png, properties: [:]) else { print("render failed"); exit(1) }
+        try? png.write(to: URL(fileURLWithPath: args[1])); print("wrote \(args[1])")
+    }
+case "font":
+    var c = Config.load()
+    let choices = TerminalFonts.installed()
+    switch args.count > 1 ? args[1] : "status" {
+    case "status":
+        print("font: " + (c.terminalFont.isEmpty ? "automatic" : c.terminalFont) + " \(Int(c.terminalFontSize)) pt (profile uses " + TerminalFonts.resolveName(family: c.terminalFont, choices: choices) + ")")
+    case "list":
+        for f in choices { print(f.family + (f.needsInstall ? "  (needs installing: glade font install)" : "")) }
+    case "set":
+        guard args.count > 2 else { print("usage: glade font set FAMILY [SIZE]   (FAMILY \"auto\" resets)"); exit(1) }
+        let family = args[2] == "auto" ? "" : args[2]
+        guard family.isEmpty || choices.contains(where: { $0.family == family }) else { print("no such monospaced font; try: glade font list"); exit(1) }
+        c.terminalFont = family
+        if args.count > 3 { guard let n = Double(args[3]), TerminalFonts.sizeRange.contains(n) else { print("size must be between 10 and 24"); exit(1) }; c.terminalFontSize = n }
+        c.save()
+        print("saved; run `glade font apply` to update open Glade terminals")
+    case "install":
+        do { let copied = try FontInstaller().install(); print(copied.isEmpty ? "JetBrains Mono is already installed" : "installed \(copied.joined(separator: ", ")) into ~/Library/Fonts") }
+        catch { print("\(error)"); exit(1) }
+    case "apply":
+        if let err = TerminalBridge.applyFont(postScript: TerminalFonts.resolveName(family: c.terminalFont, choices: choices), size: c.terminalFontSize) { print(err); exit(1) }
+        print("applied")
+    default: print("usage: glade font status|list|set FAMILY [SIZE]|install|apply"); exit(1)
+    }
 case "scenery":
     var c = Config.load()
     switch args.count > 1 ? args[1] : "status" {

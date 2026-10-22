@@ -19,6 +19,7 @@ final class ConfigTests: XCTestCase {
         c.chime = true; c.waitDelay = 7; c.doneDelay = 30; c.giveUpAfter = 0; c.snoozeUntil = 123
         c.lookId = "user-abc"; c.sceneryOn = true; c.lookChosen = true; c.onboarded = true
         c.smartAlerts = false; c.showDetails = false
+        c.terminalFont = "JetBrains Mono"; c.terminalFontSize = 16
         c.save(to: dir + "/sub/config.json")
         XCTAssertEqual(Config.load(from: dir + "/sub/config.json"), c)
     }
@@ -46,5 +47,12 @@ final class ConfigTests: XCTestCase {
     func testMigrateWithoutLegacyDoesNothing() {
         XCTAssertFalse(Config.migrateLegacy(from: dir + "/nope.json", to: dir + "/new.json"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: dir + "/new.json"))
+    }
+
+    func testOutOfRangeFontSizeIsIgnored() {
+        try! #"{"terminalFontSize": 400, "terminalFont": "Menlo"}"#.write(toFile: dir + "/f.json", atomically: true, encoding: .utf8)
+        let c = Config.load(from: dir + "/f.json")
+        XCTAssertEqual(c.terminalFontSize, 14)
+        XCTAssertEqual(c.terminalFont, "Menlo")
     }
 }

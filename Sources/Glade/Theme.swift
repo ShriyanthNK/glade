@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import GladeCore
 
 /// Glade's look: the same plum, paper and peach as Hoot and the website.
 /// Square corners and hard offset shadows keep everything on a pixel grid.
@@ -19,8 +20,12 @@ enum Theme {
 
     static var secondary: Color { paper.opacity(0.74) }   // 4.5:1+ on surface and deep
 
-    static func title(_ size: CGFloat = 26) -> Font { .system(size: size, weight: .heavy, design: .rounded) }
-    static func voice(_ size: CGFloat = 12) -> Font { .system(size: size, weight: .bold, design: .monospaced) }
+    // Typefaces (bundled, SIL OFL; see BrandFonts): Bricolage Grotesque for display, Pixelify Sans for small pixel
+    // labels and buttons, JetBrains Mono for Hoot's voice. Falls back to the system font if one failed to register.
+    static func title(_ size: CGFloat = 26) -> Font { .custom(BrandFonts.display, size: size) }
+    static func ui(_ size: CGFloat = 15) -> Font { .custom(BrandFonts.ui, size: size) }
+    static func label(_ size: CGFloat = 13) -> Font { .custom(BrandFonts.label, size: size) }
+    static func voice(_ size: CGFloat = 12) -> Font { .custom(BrandFonts.voice, size: size) }
 }
 
 /// A square card with a hard pixel shadow, like the cards on the website.
@@ -42,7 +47,7 @@ struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .font(Theme.label(15))
             .foregroundColor(Theme.outline)
             .padding(.horizontal, 14).padding(.vertical, 7)
             .background(Theme.sparkle.opacity(enabled ? 1 : 0.35))
@@ -57,7 +62,7 @@ struct SecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .font(Theme.label(14))
             .foregroundColor(Theme.paper.opacity(enabled ? 1 : 0.45))
             .padding(.horizontal, 12).padding(.vertical, 6)
             .background(configuration.isPressed ? Theme.surfaceHi : Theme.ink)
@@ -77,7 +82,7 @@ struct PixelToggleStyle: ToggleStyle {
                 .frame(width: 44, height: 24)
                 .overlay(Rectangle().stroke(configuration.isOn ? Theme.outline : Theme.line, lineWidth: 2))
                 configuration.label
-                    .font(.system(size: 13, design: .rounded))
+                    .font(Theme.ui(14))
                     .foregroundColor(Theme.paper)
                 Spacer(minLength: 0)
             }
@@ -95,7 +100,7 @@ struct PageHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(Theme.title()).foregroundColor(Theme.paper)
-            Text(subtitle).font(.system(size: 13)).foregroundColor(Theme.secondary)
+            Text(subtitle).font(.system(size: 14)).foregroundColor(Theme.secondary)
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
@@ -159,7 +164,7 @@ struct PixelStepper: View {
 
     private func button(_ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 11, weight: .heavy))
+            Image(systemName: symbol).font(.system(size: 12, weight: .heavy))
                 .foregroundColor(Theme.paper.opacity(enabled ? 1 : 0.35))
                 .frame(width: 26, height: 26)
                 .background(Theme.surfaceHi)

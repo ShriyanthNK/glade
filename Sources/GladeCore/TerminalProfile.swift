@@ -18,9 +18,10 @@ public enum TerminalProfile {
 
     /// The profile as a `.terminal` property list. `tint` is the background opacity; it must match
     /// `LookPipeline.Options.terminalTint`, which the backdrops' contrast is solved against.
-    public static func plist(tint: Double = LookPipeline.Options().terminalTint) -> [String: Any] {
-        let font = NSFont(name: "JetBrainsMono-Regular", size: 14) ?? NSFont(name: "Menlo-Regular", size: 14)
-            ?? NSFont.userFixedPitchFont(ofSize: 14)!
+    public static func plist(tint: Double = LookPipeline.Options().terminalTint, fontName: String = "Menlo-Regular",
+                             fontSize: Double = TerminalFonts.defaultSize) -> [String: Any] {
+        let size = CGFloat(TerminalFonts.sizeRange.contains(fontSize) ? fontSize : TerminalFonts.defaultSize)
+        let font = NSFont(name: fontName, size: size) ?? NSFont(name: "Menlo-Regular", size: size) ?? NSFont.userFixedPitchFont(ofSize: size)!
         var p: [String: Any] = [
             "name": name, "type": "Window Settings", "ProfileCurrentVersion": 2.07,
             "BackgroundColor": archive(color(0x2A1A26, alpha: CGFloat(tint))),
@@ -43,8 +44,9 @@ public enum TerminalProfile {
         return p
     }
 
-    public static func write(to path: String, tint: Double = LookPipeline.Options().terminalTint) throws {
-        let data = try PropertyListSerialization.data(fromPropertyList: plist(tint: tint), format: .xml, options: 0)
+    public static func write(to path: String, tint: Double = LookPipeline.Options().terminalTint, fontName: String = "Menlo-Regular",
+                             fontSize: Double = TerminalFonts.defaultSize) throws {
+        let data = try PropertyListSerialization.data(fromPropertyList: plist(tint: tint, fontName: fontName, fontSize: fontSize), format: .xml, options: 0)
         try FileManager.default.createDirectory(atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
         try data.write(to: URL(fileURLWithPath: path))
     }
