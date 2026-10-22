@@ -1,7 +1,7 @@
 import AppKit
 import GladeCore
 
-/// The menu bar item: quick tests, snooze, and the way into Settings.
+/// The menu bar item: opens the Glade window, plus quick tests and snooze.
 final class StatusItemController: NSObject, NSMenuDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
@@ -25,6 +25,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.addItem(.separator())
         }
 
+        let open = action("Open Glade…", #selector(openGlade))
+        open.keyEquivalent = "o"
+        menu.addItem(open)
+        menu.addItem(.separator())
+
         menu.addItem(action("Show Mochi (waiting)", #selector(testWaiting)))
         menu.addItem(action("Show Mochi (done)", #selector(testDone)))
         menu.addItem(.separator())
@@ -40,9 +45,6 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(snooze)
         menu.addItem(.separator())
 
-        let settings = action("Settings…", #selector(openSettings))
-        settings.keyEquivalent = ","
-        menu.addItem(settings)
         let quit = action("Quit Glade", #selector(quit))
         quit.keyEquivalent = "q"
         menu.addItem(quit)
@@ -58,7 +60,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func testDone() { sendTest(done: true) }
     @objc private func snoozeFor(_ sender: NSMenuItem) { _ = applySnooze(sender.representedObject as? String ?? "") }
     @objc private func clearSnooze() { _ = applySnooze("clear") }
-    @objc private func openSettings() { SettingsWindowController.shared.show() }
+    @objc private func openGlade() { AppWindowController.shared.show() }
     @objc private func quit() { NSApp.terminate(nil) }
 
     /// Mochi's resting pose as a small colored icon, drawn from the same sprite as the pop-up.

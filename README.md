@@ -3,7 +3,7 @@
 A Mac app for people who live in Claude Code. **Mochi**, a pixel-art dumpling with a sprout, pops up in the
 corner of your screen when Claude is done or waiting on you, then gets out of the way.
 
-Native Swift/SwiftUI. No Dock icon. macOS 13+.
+Native Swift/SwiftUI. Lives in the menu bar; the Glade window (Home, Looks, Alerts, Claude Code, About) opens from its icon. macOS 13+.
 
 ## Install (from source)
 
@@ -22,7 +22,11 @@ A `claude-buddy` command stays linked to `glade` so old scripts keep working.
     glade chime on|off        # soft chime (off by default)
     glade delays 5 20         # seconds before the waiting / done buddy appears
     glade snooze 30           # silence for 30 min (or: forever, clear)
+    glade open [page]         open the Glade window (home, looks, alerts, claude-code, about)
+    glade look list|use ID|add PHOTO|remove ID   backdrops (add --out FILE.png only exports)
+    glade hooks install|uninstall|status         manage the Claude Code hooks
     glade hide | quit
+| quit
 
 ## Behavior
 

@@ -8,7 +8,7 @@ func usage() {
 
       glade test [wait|done] [--age SECONDS]   show the buddy right now
       glade snooze MINUTES|forever|clear      silence the buddy
-      glade settings [alerts|looks|claude-code|general]     open the settings window
+      glade open [home|looks|alerts|claude-code|about]  open the Glade window
       glade hooks install|uninstall|status            manage the Claude Code hooks
       glade look list|use ID|add PHOTO|remove ID      manage backdrops (add --out FILE.png just exports)
       glade hide                               hide it
@@ -101,9 +101,9 @@ case "test":
 case "snooze":
     guard let c = applySnooze(args.count > 1 ? args[1] : "") else { print("usage: glade snooze MINUTES|forever|clear"); exit(1) }
     print(c.snoozeUntil > 0 ? "snoozed" : "snooze cleared")
-case "settings":
+case "open", "settings":
     guard ensureDaemon() else { print("could not start Glade.app"); exit(1) }
-    _ = sendEvent("Settings", flags: args.count > 1 ? "tab=\(args[1])" : "")
+    _ = sendEvent("Open", flags: args.count > 1 ? "tab=\(args[1])" : "")
 case "look":
     let store = LookStore()
     let usage = "usage: glade look list | use ID | add PHOTO [--name NAME] [--calm 0-1] [--out FILE.png] | remove ID"

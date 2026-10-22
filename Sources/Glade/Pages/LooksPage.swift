@@ -3,10 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import GladeCore
 
-private let plum = Color(.sRGB, red: 0x2A / 255.0, green: 0x1A / 255.0, blue: 0x26 / 255.0, opacity: 1)
-private let paper = Color(.sRGB, red: 1, green: 0xF4 / 255.0, blue: 0xDC / 255.0, opacity: 1)
-
-struct LooksTab: View {
+struct LooksPage: View {
     private let store = LookStore()
     @State private var looks = LookStore().all()
     @State private var config = Config.load()
@@ -15,26 +12,37 @@ struct LooksTab: View {
     @State private var dropping = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let current = store.look(id: config.lookId)
+        VStack(alignment: .leading, spacing: 20) {
+            PageHeader(title: "Looks", subtitle: "The scene behind your terminal. Add your own photos and Glade turns them into pixel art.")
+            HStack(alignment: .top, spacing: 20) {
+                LookPreview(look: current, width: 400)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("In use").font(Theme.voice(11)).foregroundColor(Theme.peach)
+                    Text(current.name).font(Theme.title(22)).foregroundColor(Theme.paper)
+                    Text(current.builtin ? "Built in to Glade." : "Made from your photo, on this Mac.")
+                        .font(.system(size: 13)).foregroundColor(Theme.secondary)
+                    Spacer(minLength: 6)
+                    HStack {
+                        Button("Add photo…") { choosePhoto() }.buttonStyle(PrimaryButtonStyle())
+                        if !current.builtin {
+                            Button("Delete") { delete(current) }.buttonStyle(SecondaryButtonStyle())
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: 225)
+            }
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 14) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 14) {
                     ForEach(looks) { look in card(look) }
                 }
-                .padding(4)
+                .padding(.vertical, 4).padding(.trailing, 6)
             }
-            .frame(height: 240)
-            HStack {
-                Button("Add photo…") { choosePhoto() }
-                Text(message.isEmpty ? "Or drop a photo here. Photos are turned into pixel art on your Mac and never uploaded."
-                                     : message)
-                    .font(.callout).foregroundColor(message.isEmpty ? .secondary : .red)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Text("Click a look to choose it. Right-click one of your own looks to delete it.")
-                .font(.footnote).foregroundColor(.secondary)
+            Text(message.isEmpty ? "Drop a photo anywhere on this page. It never leaves your Mac." : message)
+                .font(.system(size: 12)).foregroundColor(message.isEmpty ? Theme.secondary : Theme.alert)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.accentColor, lineWidth: dropping ? 2 : 0))
+        .overlay(Rectangle().stroke(Theme.sparkle, lineWidth: dropping ? 3 : 0).padding(-10))
         .onDrop(of: [.fileURL], isTargeted: $dropping) { providers in
             guard let p = providers.first else { return false }
             _ = p.loadObject(ofClass: URL.self) { url, _ in
@@ -56,39 +64,33 @@ struct LooksTab: View {
 
     private func card(_ look: Look) -> some View {
         let selected = config.lookId == look.id
-        return VStack(spacing: 4) {
-            Group {
-                if let img = NSImage(contentsOf: store.backdropURL(look)) {
-                    Image(nsImage: img).resizable().interpolation(.none).aspectRatio(16.0 / 9.0, contentMode: .fit)
-                } else {
-                    Rectangle().fill(plum).aspectRatio(16.0 / 9.0, contentMode: .fit)
+        return Button { select(look.id) } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Group {
+                    if let img = NSImage(contentsOf: store.backdropURL(look)) {
+                        Image(nsImage: img).resizable().interpolation(.none).aspectRatio(16.0 / 9.0, contentMode: .fit)
+                    } else {
+                        Rectangle().fill(Theme.ink).aspectRatio(16.0 / 9.0, contentMode: .fit)
+                    }
                 }
+                .overlay(Rectangle().stroke(selected ? Theme.sparkle : Theme.line, lineWidth: selected ? 3 : 2))
+                HStack(spacing: 6) {
+                    if selected { Rectangle().fill(Theme.sparkle).frame(width: 8, height: 8) }
+                    Text(look.name).lineLimit(1)
+                }
+                .font(.system(size: 12, weight: selected ? .bold : .regular, design: .rounded))
+                .foregroundColor(Theme.paper)
             }
-            .cornerRadius(4)
-            .overlay(RoundedRectangle(cornerRadius: 4).stroke(selected ? Color.accentColor : Color.secondary.opacity(0.3),
-                                                              lineWidth: selected ? 3 : 1))
-            HStack(spacing: 4) {
-                if selected { Image(systemName: "checkmark.circle.fill").foregroundColor(.accentColor) }
-                Text(look.name).lineLimit(1)
-            }
-            .font(.callout)
+            .contentShape(Rectangle())
         }
-        .contentShape(Rectangle())
-        .onTapGesture { select(look.id) }
-        .contextMenu {
-            if !look.builtin { Button("Delete look") { delete(look) } }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(look.name + (selected ? ", selected" : ""))
-        .accessibilityAddTraits(.isButton)
+        .buttonStyle(.plain)
+        .contextMenu { if !look.builtin { Button("Delete look") { delete(look) } } }
+        .accessibilityLabel(look.name + (selected ? ", in use" : ""))
     }
 
     private func reload() { looks = store.all(); config = Config.load() }
 
-    private func select(_ id: String) {
-        config.lookId = id
-        config.save()
-    }
+    private func select(_ id: String) { config.lookId = id; config.save() }
 
     private func delete(_ look: Look) {
         do {
@@ -139,47 +141,49 @@ struct AddLookSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Add a look").font(.headline)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Add a look").font(Theme.title(22)).foregroundColor(Theme.paper)
             ZStack(alignment: .topLeading) {
                 if let r = result {
                     Image(decorative: r.image, scale: 1).resizable().interpolation(.none)
                 } else {
-                    Rectangle().fill(plum)
+                    Rectangle().fill(Theme.ink)
                 }
-                Rectangle().fill(plum.opacity(LookPipeline.Options().terminalTint))   // the terminal's own tint
+                Rectangle().fill(Theme.ink.opacity(LookPipeline.Options().terminalTint))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("~/my-project $ claude").foregroundColor(paper)
-                    Text("Claude's done, your turn.").foregroundColor(paper)
-                    Text("> _").foregroundColor(Color(.sRGB, red: 1, green: 0.82, blue: 0.25, opacity: 1))
+                    Text("~/my-project $ claude").foregroundColor(Theme.paper)
+                    Text("Claude's done, your turn.").foregroundColor(Theme.paper)
+                    Text("> _").foregroundColor(Theme.sparkle)
                 }
                 .font(.system(size: 13, design: .monospaced))
                 .padding(12)
             }
             .frame(width: 384, height: 216)
-            .cornerRadius(4)
+            .overlay(Rectangle().stroke(Theme.line, lineWidth: 2))
             .accessibilityLabel("Preview of the look behind sample terminal text")
 
             TextField("Name", text: $name).textFieldStyle(.roundedBorder)
             HStack {
-                Text("Calm")
-                Slider(value: Binding(get: { calm }, set: { calm = $0; render() }), in: 0...1)
-                Text(calm == 0 ? "As is" : "\(Int(calm * 100))%").frame(width: 44, alignment: .trailing).foregroundColor(.secondary)
+                Text("Calm").font(.system(size: 13, design: .rounded)).foregroundColor(Theme.paper)
+                Slider(value: Binding(get: { calm }, set: { calm = $0; render() }), in: 0...1).tint(Theme.sparkle)
+                Text(calm == 0 ? "As is" : "\(Int(calm * 100))%").frame(width: 44, alignment: .trailing)
+                    .font(.system(size: 12)).foregroundColor(Theme.secondary)
             }
             if let r = result, r.darkening > 0.01 {
                 Text("Darkened \(Int(r.darkening * 100))% so terminal text stays easy to read.")
-                    .font(.footnote).foregroundColor(.secondary)
+                    .font(.system(size: 12)).foregroundColor(Theme.secondary)
             }
             HStack {
                 Spacer()
-                Button("Cancel", action: onCancel).keyboardShortcut(.cancelAction)
+                Button("Cancel", action: onCancel).buttonStyle(SecondaryButtonStyle()).keyboardShortcut(.cancelAction)
                 Button("Add look") { if let r = result { onAdd(name, r.image) } }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(result == nil)
+                    .buttonStyle(PrimaryButtonStyle()).keyboardShortcut(.defaultAction).disabled(result == nil)
             }
         }
-        .padding(20)
-        .frame(width: 424)
+        .padding(24)
+        .frame(width: 432)
+        .background(Theme.deep)
+        .preferredColorScheme(.dark)
         .onAppear { render() }
     }
 

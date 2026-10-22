@@ -60,7 +60,7 @@ final class BuddyController {
             if m.session == nil || m.session == pendingSession { cancelPending() }
             if m.session == nil || m.session == currentSession { hide() }
         case "Hide": cancelPending(); hide()
-        case "Settings": SettingsWindowController.shared.show(tab: m.flags["tab"].flatMap(SettingsTab.init(rawValue:)))
+        case "Settings", "Open": AppWindowController.shared.show(page: m.flags["tab"].flatMap(AppPage.init(rawValue:)))
         case "Quit": NSApp.terminate(nil)
         default: break
         }
