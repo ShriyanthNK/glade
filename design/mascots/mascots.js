@@ -58,6 +58,10 @@ class Canvas32 {
   }
 }
 
+// Loop length for exported animations: every periodic term is snapped so t and t + LOOP_T give the same frame.
+const LOOP_T = 6;
+function S(k) { const base = 2 * Math.PI / LOOP_T; return Math.max(1, Math.round(k / base)) * base; }
+
 // ------------------------------------------------------------------ shared moods
 // tier: 0 calm, 1 waiting, 2 annoyed, 3 angry, 4 done
 const MOODS = ['calm', 'waiting', 'annoyed', 'angry', 'done'];
@@ -208,7 +212,7 @@ function drawOwl(mood, t) {
   ];
   const ink = 1;
   const done = mood === 'done', angry = mood === 'angry', annoyed = mood === 'annoyed', waiting = mood === 'waiting';
-  const bob = done ? 0 : angry ? 0 : (Math.sin(t * 2) > 0.5 ? -1 : 0);
+  const bob = done ? 0 : angry ? 0 : (Math.sin(t * S(2)) > 0.5 ? -1 : 0);
   const ruffle0 = angry ? (Math.floor(t * 8) % 2) : 0;
   const oy = bob, puff = ruffle0;
   const lean = waiting ? 1 : angry ? (Math.floor(t * 14) % 2 ? 1 : 0) : 0;
@@ -227,7 +231,7 @@ function drawOwl(mood, t) {
   // wings behind: lit from the top left, so the left wing is lighter; tips lift away from the body when waiting
   const wy = done ? 13 : 21;
   for (const side of [-1, 1]) {
-    const wave = waiting && side === 1 ? (Math.sin(t * 6) > 0 ? -5 : -3) : 0;
+    const wave = waiting && side === 1 ? (Math.sin(t * S(6)) > 0 ? -5 : -3) : 0;
     const cx = 16 + side * (done ? 8.6 : 10 + puff * 0.4 + (waiting ? 0.2 : 0)), cy = wy + oy + wave;
     const shear = waiting ? 0.36 : done ? 0.4 : 0.2, ry = done ? 6.4 : 7.2;
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
@@ -253,10 +257,10 @@ function drawOwl(mood, t) {
   c.ellipse(bx, by + 4.5, 6.3 + puff * 0.6, 7.3, 5);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (c.get(x, y) === 5 && c.inEllipse(x, y, bx, by + 4.5, 7.3 + puff * 0.6, 8.3) && !c.inEllipse(x, y, bx, by + 4.5, 5.4 + puff * 0.6, 6.4)) c.set(x, y, 6);
   const mk = (x, y) => { c.set(x - 1, y, 6); c.set(x, y + 1, 6); c.set(x + 1, y, 6); };
-  mk(bx - 2, by + 2); mk(bx + 2, by + 2); mk(bx, by + 5); mk(bx, by + 8);
+  mk(bx, by + 2); mk(bx - 3, by + 5); mk(bx + 3, by + 5); mk(bx, by + 8);
 
   // feet
-  const tap = waiting && Math.sin(t * 12.5) > 0 ? -2 : 0;
+  const tap = waiting && Math.sin(t * S(12.5)) > 0 ? -2 : 0;
   c.rect(bx - 5, by + 11, 4, 1, 9); c.rect(bx + 1, by + 11 + tap, 4, 1, 9);
   [bx - 5, bx - 3].forEach(x => c.set(x, by + 12, 10)); [bx + 1, bx + 3].forEach(x => c.set(x, by + 12 + tap, 10));
   c.rect(bx - 6, by + 11, 1, 1, ink); c.rect(bx + 5, by + 11, 1, 1, ink);
@@ -271,8 +275,8 @@ function drawOwl(mood, t) {
     }
   };
   ring(exL); ring(exR);
-  const lid = (mood === 'calm' && blinkAt(t, 3.0, 0.2)) || (waiting && blinkAt(t, 2.8, 0.14)) || false;
-  const look = waiting ? (Math.sin(t * 1.2) > 0 ? 1 : 0) : mood === 'calm' ? (Math.sin(t * 1.9) > 0.45 ? 1 : Math.sin(t * 1.9) < -0.45 ? -1 : 0) : 0;
+  const lid = (mood === 'calm' && blinkAt(t, 3, 0.2)) || (waiting && blinkAt(t, 3, 0.14)) || false;
+  const look = waiting ? (Math.sin(t * S(1.2)) > 0 ? 1 : 0) : mood === 'calm' ? (Math.sin(t * S(1.9)) > 0.45 ? 1 : Math.sin(t * S(1.9)) < -0.45 ? -1 : 0) : 0;
   const eye = (cx, side) => {
     const ix = Math.round(cx), iy = Math.round(ey);
     if (done) { // happy arcs
@@ -310,11 +314,11 @@ function drawOwl(mood, t) {
   if (cc) { c.rect(bx - 9, by + 0, 2, 1, cc); c.rect(bx + 7, by + 0, 2, 1, cc); }
 
   // extras
-  if (annoyed) { c.sweat(bx + 10, by - 14 + (Math.sin(t * 2) > 0 ? 1 : 0), 12, 16); c.glyph('?', 1, 1, 13); }
-  if (angry) { c.glyph('!', 1, 4 + (Math.floor(t * 8) % 2), 14); c.glyph('!', 4, 4 + (Math.floor(t * 8 + 1) % 2), 14); const s = Math.floor(t * 6) % 2; c.puff(bx + 8, 6 - s, 15); }
+  if (annoyed) { c.sweat(bx + 10, by - 14 + (Math.sin(t * S(2)) > 0 ? 1 : 0), 12, 16); c.glyph('?', 1, 1, 13); }
+  if (angry) { c.glyph('!', 1, 4 + (Math.floor(t * 8) % 2), 14); c.glyph('!', 4, 4 + (Math.floor(t * 8 + 1) % 2), 14); const s = Math.floor(t * 6) % 2; c.puff(bx + 10, 5 - s, 15); }
   if (done) { const k = Math.floor(t * 6); [[3, 8], [28, 9], [3, 18], [28, 18], [24, 5], [6, 4], [27, 26], [4, 26]].forEach(([x, y], i) => { if ((k + i) % 3 !== 0) c.plus(x, y + ((k + i) % 2), 13); }); }
   return { px: c.px, pal };
 }
 
-if (typeof window !== 'undefined') window.MASCOTS = { drawFirefly, drawOwl, MOODS, N };
-if (typeof module !== 'undefined') module.exports = { drawFirefly, drawOwl, MOODS, N };
+if (typeof window !== 'undefined') window.MASCOTS = { drawFirefly, drawOwl, MOODS, N, LOOP_T };
+if (typeof module !== 'undefined') module.exports = { drawFirefly, drawOwl, MOODS, N, LOOP_T };
