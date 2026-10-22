@@ -49,7 +49,7 @@ ok "settings backup written"
 
 # daemon + CLI + hook against the isolated socket
 GLADE="$GLADE_HOME/bin/glade"
-"$GLADE" test done | grep -q "buddy sent" || fail "glade test failed"
+"$GLADE" test done | grep -q "hoot sent" || fail "glade test failed"
 sleep 1
 [ -S "$GLADE_HOME/glade.sock" ] || fail "daemon did not bind $GLADE_HOME/glade.sock"
 ok "daemon started on the isolated socket"
