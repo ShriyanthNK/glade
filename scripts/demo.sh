@@ -1,19 +1,21 @@
 #!/bin/bash
 # A throwaway demo of Glade: its own home directory, its own settings file, nothing touches your real
 # ~/.glade, ~/.claude-buddy or ~/.claude. Start: scripts/demo.sh start   Stop and clean up: scripts/demo.sh stop
+# After it starts, click Hoot's menu-bar icon and choose "Open Glade…".
 set -u
 cd "$(dirname "$0")/.."
 MARK="${TMPDIR:-/tmp}/glade-demo-home"
 
+# a raw event for the daemon: event, terminal bundle id, flags, json
+EMPTY="{}"
+send() { printf '%s\n\n%s\n%s\n' "$1" "$2" "${3:-$EMPTY}" | nc -U "$GLADE_HOME/glade.sock"; }
+
 stop() {
   if [ -f "$MARK" ]; then
     TH=$(cat "$MARK")
-    GLADE_HOME="$TH/.glade" .build/debug/glade quit >/dev/null 2>&1
+    GLADE_HOME="$TH/.glade" send Quit "" >/dev/null 2>&1
     sleep 1
-    # close only the Terminal windows that use the Glade profile
-    osascript -e 'tell application "Terminal" to repeat with w in (windows whose name of current settings of selected tab is "Glade")
-      close w
-    end repeat' >/dev/null 2>&1 || true
+    pkill -f "$TH" 2>/dev/null
     rm -rf "$TH" "$MARK"
     echo "demo stopped and cleaned up"
   else
@@ -26,25 +28,9 @@ start() {
   swift build >/dev/null 2>&1 || { echo "swift build failed"; exit 1; }
   TH=$(mktemp -d); echo "$TH" > "$MARK"
   export GLADE_HOME="$TH/.glade" GLADE_LEGACY_HOME="$TH/old" GLADE_CLAUDE_SETTINGS="$TH/settings.json"
-  echo '{}' > "$TH/settings.json"
-  G=.build/debug/glade
-  # two sample photo looks, if macOS's built-in wallpapers are around
-  T="/System/Library/Desktop Pictures/.thumbnails"
-  [ -f "$T/Big Sur Coastline.heic" ] && $G look add "$T/Big Sur Coastline.heic" --name "Red coast" >/dev/null
-  [ -f "$T/Catalina Sunset.heic" ] && $G look add "$T/Catalina Sunset.heic" --name "Island sunset" --calm 0.3 >/dev/null
-  (nohup $G >/dev/null 2>&1 &)
-  sleep 1.5
-  $G open home
+  mkdir -p "$GLADE_HOME"; echo '{}' > "$TH/settings.json"
+  (nohup .build/debug/glade >/dev/null 2>&1 &)
   sleep 2
-  # a Terminal window in the Glade profile, with the scene behind it
-  $G terminal open >/dev/null 2>&1; $G scenery on >/dev/null
-  sleep 3
-  # Hoot's pop-up, getting more impatient, then done
-  $G test;                 sleep 5
-  $G test --age 70;        sleep 5
-  $G test --age 130;       sleep 5
-  $G test done;            sleep 6
-  $G hide
   echo "demo is running; stop it with: scripts/demo.sh stop"
 }
 

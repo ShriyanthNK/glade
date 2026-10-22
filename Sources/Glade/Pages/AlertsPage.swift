@@ -4,7 +4,7 @@ import GladeCore
 struct AlertsPage: View {
     @State private var config = Config.load()
 
-    /// Every control writes straight to config.json, the same file the CLI edits.
+    /// Every control writes straight to config.json, the file the daemon reads.
     private func bind<T>(_ kp: WritableKeyPath<Config, T>) -> Binding<T> {
         Binding(get: { config[keyPath: kp] }, set: { config[keyPath: kp] = $0; config.save() })
     }

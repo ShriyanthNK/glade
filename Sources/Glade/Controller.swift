@@ -18,7 +18,7 @@ final class BuddyController {
     private var tracker: Timer?
     private var screen: NSScreen?
     private var details: [String: String] = [:]   // what Claude wants, by session, from PermissionRequest
-    private var currentForced = false              // shown by `glade test`: never auto-hidden or suppressed
+    private var currentForced = false              // shown by the "Show Hoot" buttons: never auto-hidden or suppressed
 
     func start() {
         let host = ClickHostingView(rootView: BuddyRoot(model: model))

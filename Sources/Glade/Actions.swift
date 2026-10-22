@@ -1,7 +1,7 @@
 import Foundation
 import GladeCore
 
-/// Things both the CLI and the menu bar / settings window do, so they cannot drift apart.
+/// Things both the menu bar and the Glade window do, so they cannot drift apart.
 
 /// Applies a snooze argument ("30", "forever", "clear"/"off") to the config. Returns nil for anything else.
 func applySnooze(_ arg: String) -> Config? {

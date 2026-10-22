@@ -11,7 +11,7 @@ step() {
 REAL_SUM=$(shasum "$HOME/.claude/settings.json" 2>/dev/null || echo none)
 step "swift build" swift build
 step "unit tests" swift test
-step "install / CLI end to end" scripts/test-install.sh
+step "install smoke test" scripts/test-install.sh
 [ "$(shasum "$HOME/.claude/settings.json" 2>/dev/null || echo none)" = "$REAL_SUM" ] && echo "real settings.json untouched ... ok" || { echo "real settings.json CHANGED ... FAIL"; fail=1; }
 [ -e "$HOME/.glade" ] && { echo "stray ~/.glade left behind ... FAIL"; fail=1; }
 [ "$fail" = 0 ] && echo "VERIFY PASSED" || echo "VERIFY FAILED"

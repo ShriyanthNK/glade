@@ -15,7 +15,7 @@ How work gets done on this project: a loop with a separate verifier, not a singl
 
 | Loop | Goal | Verifier | Cap |
 |---|---|---|---|
-| App phase | The phase's acceptance checks pass | `scripts/verify.sh` (build, unit tests, isolated install/CLI test, real settings untouched) | 5 |
+| App phase | The phase's acceptance checks pass | `scripts/verify.sh` (build, unit tests, isolated install smoke test, real settings untouched) | 5 |
 | Mascot art | Rubric in `design/mascots/RUBRIC.md` passes | Fresh reviewer agent scoring screenshots at several animation times | 5 |
 | Website | `npm run lint`, `npm test`, `npm run build` green; rubric for design, contrast, copy claims | The site's own checks plus a fresh reviewer on screenshots at 1440 and 390 wide | 5 |
 | Release | `.dmg` opens on a clean account; `spctl -a -vv` accepts it once signed | A script on a throwaway user, then a reviewer reading its output | 3 |
