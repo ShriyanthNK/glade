@@ -17,7 +17,10 @@
   .row .tag { color: var(--peach); font: 700 12px ui-monospace, "SF Mono", monospace; margin-bottom: 12px; display:block; }
   .moods { display:grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
   .cell { text-align:center; }
-  canvas { width: 100%; max-width: 224px; aspect-ratio: 1; image-rendering: pixelated; background: rgba(42,26,38,.55); border: 2px solid var(--line); }
+  /* the sprite is shown the way it appears in the app: over arbitrary desktop content, with a light rim and a soft shadow */
+  .stage { width: 100%; max-width: 224px; aspect-ratio: 1; background: #8b8497; border: 2px solid var(--line); margin: 0 auto; }
+  .stage.dark { background: #1f1320; }
+  canvas { display:block; width: 100%; height: 100%; image-rendering: pixelated; filter: drop-shadow(0 0 0.6px rgba(255,255,255,.7)) drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
   .cell b { display:block; margin-top: 6px; font: 800 13px ui-monospace, "SF Mono", monospace; color: var(--paper); }
   .cell i { display:block; font-style: normal; font-size: 12px; color: rgba(255,244,220,.72); }
   .strip { display:flex; gap: 16px; align-items:flex-end; margin-top: 16px; }
@@ -56,8 +59,9 @@ function build(containerId, draw) {
   const root = document.getElementById(containerId);
   for (const mood of MOODLIST) {
     const cell = document.createElement('div'); cell.className = 'cell';
+    const stage = document.createElement('div'); stage.className = 'stage';
     const cv = document.createElement('canvas'); cv.width = N * SCALE; cv.height = N * SCALE;
-    cell.appendChild(cv);
+    stage.appendChild(cv); cell.appendChild(stage);
     cell.insertAdjacentHTML('beforeend', `<b>${mood}</b><i>${NOTES[mood]}</i>`);
     root.appendChild(cell);
     cells.push({ cv, draw, mood });

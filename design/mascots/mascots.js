@@ -50,7 +50,12 @@ class Canvas32 {
   }
   plus(x, y, c) { this.set(x, y, c); this.set(x - 1, y, c); this.set(x + 1, y, c); this.set(x, y - 1, c); this.set(x, y + 1, c); }
   sweat(x, y, c, hi) { this.set(x, y, c); this.set(x, y + 1, c); this.set(x - 1, y + 2, c); this.set(x, y + 2, c); this.set(x + 1, y + 2, c); this.set(x, y + 3, c); this.set(x, y + 1, hi); }
-  puff(x, y, c) { this.rect(x, y, 3, 2, c); this.rect(x + 1, y - 1, 2, 1, c); this.rect(x - 1, y + 1, 1, 1, c); }
+  puff(x, y, c) {   // a small cloud with a plum outline
+    const cells = [[x, y], [x + 1, y], [x + 2, y], [x, y + 1], [x + 1, y + 1], [x + 2, y + 1], [x + 1, y - 1], [x + 2, y - 1]];
+    const set = new Set(cells.map(p => p.join(',')));
+    cells.forEach(([cx2, cy2]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { if (!set.has((cx2 + dx) + ',' + (cy2 + dy))) this.set(cx2 + dx, cy2 + dy, 1); }));
+    cells.forEach(([cx2, cy2]) => this.set(cx2, cy2, c));
+  }
 }
 
 // ------------------------------------------------------------------ shared moods
@@ -75,7 +80,8 @@ function drawFirefly(mood, t) {
   const rate = { calm: 1.3, waiting: 3.6, annoyed: 6.5, angry: 11, done: 5 }[mood];
   const pulse = 0.5 + 0.5 * Math.sin(t * rate);
   const done = mood === 'done', angry = mood === 'angry', annoyed = mood === 'annoyed', waiting = mood === 'waiting';
-  const lamp = mix('#6a6238', glow, done ? 1 : waiting ? 0.8 + 0.2 * pulse : 0.3 + 0.7 * pulse);
+  const hotFlash = angry && Math.floor(t * 7) % 2 === 0;
+  const lamp = angry ? (hotFlash ? '#ffd0c4' : '#ff4a3a') : mix('#6a6238', glow, done ? 1 : waiting ? 0.8 + 0.2 * pulse : 0.3 + 0.7 * pulse);
   const pal = [
     null, '#3d2236',
     '#cdeee6', '#ffffff', '#98cbc6',                    // 2 face, 3 face hi, 4 face shade
@@ -92,7 +98,7 @@ function drawFirefly(mood, t) {
   const sh = angry ? (Math.floor(t * 16) % 2 ? 1 : 0) : 0;
   const oy = bob, X = cx + sh;
   const hx = waiting ? 1 : 0;
-  const headCy = 11 + oy, thoraxCy = 16.4 + oy, absCy = 23 + oy;
+  const headCy = 10.2 + oy, thoraxCy = 15.4 + oy, absCy = 22.4 + oy;
 
   // ---- wings (behind). waiting: lifted and flared.
   const flap = Math.sin(t * (angry ? 46 : done ? 24 : mood === 'calm' ? 8 : 15)) > 0;
@@ -104,11 +110,11 @@ function drawFirefly(mood, t) {
       if (c.inRot(x, y, wcx, wcy, rx, ry, tilt)) c.set(x, y, 5);
       else if (c.inRot(x, y, wcx, wcy, rx + 1, ry + 1, tilt)) c.set(x, y, ink);
     }
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (c.get(x, y) === 5 && !c.inRot(x, y, wcx - side * 0.7, wcy - 0.7, rx - 0.6, ry - 0.8, tilt)) c.set(x, y, 6);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (c.get(x, y) === 5 && !c.inRot(x, y, wcx - 0.8, wcy - 0.8, rx - 0.6, ry - 0.8, tilt)) c.set(x, y, 6);
   }
 
   // ---- abdomen: dark top, glowing bottom, one outline all the way round
-  const arx = 7, ary = 6.6;
+  const arx = 7, ary = 6.4;
   c.blob(X, absCy, arx, ary, 19, ink);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (c.get(x, y) === 19) {
     const dx = (x + 0.5 - X) / arx, dy = (y + 0.5 - absCy) / ary;
@@ -130,57 +136,53 @@ function drawFirefly(mood, t) {
 
   // ---- head: pale and round
   const hcx = X + hx;
-  c.blob(hcx, headCy, 5.9, 5.3, 2, ink);
+  c.blob(hcx, headCy, 5.2, 4.9, 2, ink);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (c.get(x, y) === 2) {
-    const dx = (x + 0.5 - hcx) / 5.9, dy = (y + 0.5 - headCy) / 5.3;
+    const dx = (x + 0.5 - hcx) / 5.2, dy = (y + 0.5 - headCy) / 4.9;
     if (dx * 0.6 + dy * 0.8 > 0.58) c.set(x, y, 4);
   }
-  c.rect(Math.round(hcx - 4), Math.round(headCy - 4), 3, 1, 3); c.set(Math.round(hcx - 5), Math.round(headCy - 3), 3);
+  c.rect(Math.round(hcx - 3), Math.round(headCy - 4), 3, 1, 3); c.set(Math.round(hcx - 4), Math.round(headCy - 3), 3);
 
-  // ---- antennae: light stalks from the top of the head to glowing tips
+  // ---- antennae: thin stalks rising from the top centre of the head, curving outward, with glowing bulbs
   const sway = Math.sin(t * 2.6) > 0.25 ? 1 : 0;
-  const up = waiting ? 2 : 0, droop = mood === 'calm' ? 1 : 0, back = angry ? 2 : 0;
+  const up = waiting ? 1 : 0, droop = mood === 'calm' ? 1 : 0, back = angry ? 1 : 0;
+  const topY = Math.round(headCy - 4.9);
   for (const side of [-1, 1]) {
-    const x0 = Math.round(hcx + side * 2.4), y0 = Math.round(headCy - 5.2);
-    const x1 = Math.round(hcx + side * (5.6 + sway + back)), y1 = 5 + oy + back - up + droop;
-    c.line(x0, y0, x1, y1, 23);
+    const x0 = Math.round(hcx + side * 1.2), x1 = Math.round(hcx + side * (4.6 + sway + back));
+    const y1 = 4 + oy + back - up + droop;
+    c.set(x0, topY, 23); c.set(x0 + side * (x0 === hcx ? 1 : 0), topY - 1, 23);
+    c.line(Math.round(hcx + side * 1.6), topY - 1, x1, y1 + 1, 23);
     const tx = side < 0 ? x1 - 1 : x1;
     c.rect(tx, y1 - 1, 2, 2, 7); c.set(tx, y1 - 1, pulse > 0.4 || done ? 8 : 7);
-    c.set(x1 + (side < 0 ? 1 : 0), y1 - 1, 23);   // stalk runs right into the tip
   }
 
-  // ---- face: big dark eyes on the pale face
-  const ey = Math.round(headCy - 3);
-  const eyeL = Math.round(hcx - 5), eyeR = Math.round(hcx + 1);
+  // ---- face: dark eyes straight on the pale face, one catchlight each
+  const ey = Math.round(headCy - 2.6);
+  const eyeL = Math.round(hcx - 4), eyeR = Math.round(hcx + 1);
   const blink = (mood === 'calm' && ((t % 3.6) < 0.14)) || (waiting && ((t % 2.6) < 0.12));
-  function eye(x, h) {
-    c.rect(x, ey, 4, h, ink); c.set(x, ey, 2); c.set(x + 3, ey, 2); c.set(x, ey + h - 1, 2); c.set(x + 3, ey + h - 1, 2);
-    c.set(x + 1, ey + 1, 10); c.set(x + 2, ey + 2, 12);
-    if (h > 4) c.set(x + 1, ey + 2, 10);
-  }
+  function eye(x, h) { c.rect(x, ey, 3, h, ink); c.set(x, ey, 2); c.set(x + 2, ey, 2); c.set(x, ey + h - 1, 2); c.set(x + 2, ey + h - 1, 2); c.set(x + 1, ey + 1, 10); if (h > 3) c.set(x + 1, ey + 2, ink); }
   for (const x of [eyeL, eyeR]) {
-    if (done) { c.set(x, ey + 3, ink); c.set(x + 1, ey + 2, ink); c.set(x + 2, ey + 2, ink); c.set(x + 3, ey + 3, ink); c.set(x + 1, ey + 3, ink); c.set(x + 2, ey + 3, 0); }
-    else if (blink) c.rect(x, ey + 2, 4, 1, ink);
-    else if (annoyed) { c.rect(x, ey + 2, 4, 2, ink); c.set(x, ey + 2, 10); c.rect(x - 0, ey + 1, 4, 1, 4); }
-    else if (angry) { c.rect(x, ey + 1, 4, 3, ink); c.set(x + 1, ey + 2, 14); c.set(x, ey + 1, 2); c.set(x + 3, ey + 1, 2); }
+    if (done) { c.set(x, ey + 2, ink); c.set(x + 1, ey + 1, ink); c.set(x + 2, ey + 2, ink); c.set(x, ey + 3, ink); c.set(x + 2, ey + 3, ink); }
+    else if (blink) c.rect(x, ey + 2, 3, 1, ink);
+    else if (annoyed) { c.rect(x, ey + 1, 3, 1, ink); c.rect(x, ey + 2, 3, 2, 10); c.rect(x + 1, ey + 2, 1, 2, ink); }   // flat lid line, a pupil showing underneath
+    else if (angry) { c.rect(x, ey + 1, 3, 3, ink); c.set(x + 1, ey + 2, 14); c.set(x, ey + 1, 2); c.set(x + 2, ey + 1, 2); }
     else eye(x, waiting ? 5 : 4);
   }
-  if (angry) { c.line(eyeL - 1, ey - 1, eyeL + 4, ey + 1, ink); c.line(eyeL - 1, ey, eyeL + 4, ey + 2, ink); c.line(eyeR + 4, ey - 1, eyeR - 1, ey + 1, ink); c.line(eyeR + 4, ey, eyeR - 1, ey + 2, ink); }
-  if (annoyed) { c.line(eyeL + 3, ey, eyeL, ey + 1, ink); c.line(eyeR, ey, eyeR + 3, ey + 1, ink); }
+  if (angry) { c.line(eyeL - 1, ey - 1, eyeL + 3, ey + 1, ink); c.line(eyeR + 3, ey - 1, eyeR - 1, ey + 1, ink); }
   const cheek = done || mood === 'calm' || waiting ? 11 : angry ? 14 : 0;
-  if (cheek) { c.rect(Math.round(hcx - 5), ey + 5, 2, 1, cheek); c.rect(Math.round(hcx + 4), ey + 5, 2, 1, cheek); }
+  if (cheek) { c.rect(Math.round(hcx - 4), ey + 5, 2, 1, cheek); c.rect(Math.round(hcx + 3), ey + 5, 2, 1, cheek); }
   const my = ey + 5, mx = Math.round(hcx);
-  if (done) { c.rect(mx - 2, my, 4, 1, ink); c.rect(mx - 1, my + 1, 2, 1, 14); }
+  if (done) { c.rect(mx - 1, my, 3, 1, ink); c.rect(mx, my + 1, 1, 1, 14); }
   else if (angry) { c.set(mx - 1, my + 1, ink); c.set(mx, my + 1, ink); c.set(mx - 2, my + 2, ink); c.set(mx + 1, my + 2, ink); }
   else if (annoyed) { c.rect(mx - 1, my + 1, 3, 1, ink); }
-  else { c.set(mx - 2, my, ink); c.set(mx - 1, my + 1, ink); c.set(mx, my + 1, ink); c.set(mx + 1, my, ink); }
+  else { c.set(mx - 1, my, ink); c.set(mx, my + 1, ink); c.set(mx + 1, my, ink); }
 
   // ---- halo: a 1px glow rim right outside the abdomen's lower half, plus sparse outer sparks when bright
-  const haloR = (done ? 3.4 : 0.9 + 2.2 * pulse) + (angry ? 0.7 : 0);
+  const haloR = angry ? 4.6 : (done ? 3.4 : 0.9 + 1.6 * pulse);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     if (y < absCy + 1 || y > 30 || c.get(x, y) !== 0) continue;
     const d = (Math.hypot((x + 0.5 - X) / arx, (y + 0.5 - absCy) / ary) - 1) * 6.8;
-    if (d > 0 && d < 1.9 && pulse > 0.25) c.set(x, y, 7);                                   // solid rim
+    if (d > 0 && d < 1.9 && (pulse > 0.25 || angry)) c.set(x, y, 7);                                   // solid rim
     else if (d >= 1.9 && d < haloR + 1 && (x * 3 + y * 5) % 7 === 0) c.set(x, y, 22);       // sparks
   }
 
@@ -208,7 +210,7 @@ function drawOwl(mood, t) {
   const bob = done ? 0 : angry ? 0 : (Math.sin(t * 2) > 0.5 ? -1 : 0);
   const oy = bob, puff = angry ? 1 : 0;
   const lean = waiting ? 1 : angry ? (Math.floor(t * 14) % 2 ? 1 : 0) : 0;
-  const ruffle = angry ? (Math.floor(t * 9) % 2) : 0;
+  const ruffle = angry ? (Math.floor(t * 8) % 2) : 0;
 
   // ear tufts
   const tuft = (side) => {
@@ -223,7 +225,8 @@ function drawOwl(mood, t) {
   // wings behind: lit from the top left, so the left wing is lighter; tips lift away from the body when waiting
   const wy = done ? 16 : 21;
   for (const side of [-1, 1]) {
-    const cx = 16 + side * (done ? 9.6 : 10 + puff * 0.4 + (waiting ? 0.2 : 0)), cy = wy + oy;
+    const wave = waiting && side === 1 ? (Math.sin(t * 6) > 0 ? -5 : -3) : 0;
+    const cx = 16 + side * (done ? 9.6 : 10 + puff * 0.4 + (waiting ? 0.2 : 0)), cy = wy + oy + wave;
     const shear = waiting ? 0.36 : 0.2, ry = done ? 7.0 : 7.2;
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
       const lean2 = (y - cy) * shear * side * (done ? -1.3 : 1);
@@ -251,7 +254,7 @@ function drawOwl(mood, t) {
   mk(bx - 2, by + 2); mk(bx + 2, by + 2); mk(bx, by + 5); mk(bx, by + 8);
 
   // feet
-  const tap = waiting && Math.sin(t * 7) > 0 ? -2 : 0;
+  const tap = waiting && Math.sin(t * 12.5) > 0 ? -2 : 0;
   c.rect(bx - 5, by + 11, 4, 1, 9); c.rect(bx + 1, by + 11 + tap, 4, 1, 9);
   [bx - 5, bx - 3].forEach(x => c.set(x, by + 12, 10)); [bx + 1, bx + 3].forEach(x => c.set(x, by + 12 + tap, 10));
   c.rect(bx - 6, by + 11, 1, 1, ink); c.rect(bx + 5, by + 11, 1, 1, ink);
@@ -299,15 +302,15 @@ function drawOwl(mood, t) {
   // beak
   const kx = Math.round(bx), ky = Math.round(by - 1);
   c.rect(kx - 1, ky, 2, 2, 9); c.set(kx - 1, ky + 2, 10); c.set(kx, ky + 2, 10); c.set(kx - 2, ky, ink); c.set(kx + 1, ky, ink); c.set(kx - 2, ky + 1, ink); c.set(kx + 1, ky + 1, ink); c.set(kx - 1, ky + 3, ink); c.set(kx, ky + 3, ink);
-  if (done) { c.rect(kx - 1, ky + 2, 2, 1, 14); }
+  if (done) { c.rect(kx - 1, ky + 2, 2, 2, 14); c.set(kx - 2, ky + 3, ink); c.set(kx + 1, ky + 3, ink); c.set(kx - 1, ky + 4, ink); c.set(kx, ky + 4, ink); }
   // cheeks
   const cc = done || mood === 'calm' || waiting ? 11 : angry ? 14 : 0;
   if (cc) { c.rect(bx - 9, by + 0, 2, 1, cc); c.rect(bx + 7, by + 0, 2, 1, cc); }
 
   // extras
   if (annoyed) { c.sweat(bx + 10, by - 14 + (Math.sin(t * 2) > 0 ? 1 : 0), 12, 16); c.glyph('?', 1, 1, 13); }
-  if (angry) { c.glyph('!', 1, 1 + (Math.floor(t * 8) % 2), 14); c.glyph('!', 5, 1 + (Math.floor(t * 8 + 1) % 2), 14); const s = Math.floor(t * 6) % 2; c.puff(bx + 8, 5 - s, 15); c.puff(2, 9 - s, 15); }
-  if (done) { const k = Math.floor(t * 6); [[3, 8], [28, 9], [4, 20], [28, 21], [24, 6]].forEach(([x, y], i) => { if ((k + i) % 3 !== 0) c.plus(x, y + ((k + i) % 2), 13); }); }
+  if (angry) { c.glyph('!', 1, 4 + (Math.floor(t * 8) % 2), 14); c.glyph('!', 4, 4 + (Math.floor(t * 8 + 1) % 2), 14); const s = Math.floor(t * 6) % 2; c.puff(bx + 8, 6 - s, 15); }
+  if (done) { const k = Math.floor(t * 6); [[3, 8], [28, 9], [3, 18], [28, 18], [24, 5], [6, 4], [27, 26], [4, 26]].forEach(([x, y], i) => { if ((k + i) % 3 !== 0) c.plus(x, y + ((k + i) % 2), 13); }); }
   return { px: c.px, pal };
 }
 
