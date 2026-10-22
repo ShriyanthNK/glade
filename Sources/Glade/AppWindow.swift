@@ -84,19 +84,24 @@ final class AppWindowController: NSObject, NSWindowDelegate {
 
 struct AppRoot: View {
     @ObservedObject private var nav = AppNav.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 0) {
             Sidebar(nav: nav)
             ZStack {
                 Theme.deep
+                // chrome motion: a 150 ms ease-out fade between pages; none under Reduce Motion
                 PageView(page: nav.page)
+                    .id(nav.page)
+                    .transition(.opacity)
                 .padding(.horizontal, 32)
                 .padding(.top, 40)
                 .padding(.bottom, 24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: nav.page)
         .frame(width: 920, height: 620)
         .preferredColorScheme(.dark)
     }
@@ -120,6 +125,7 @@ struct PageView: View {
 
 struct Sidebar: View {
     @ObservedObject var nav: AppNav
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private static let forest: NSImage? = {
         let store = LookStore()
         return NSImage(contentsOf: store.backdropURL(LookStore.builtins[0]))
@@ -163,6 +169,7 @@ struct Sidebar: View {
             .foregroundColor(selected ? Theme.outline : Theme.paper)
             .padding(.horizontal, 12).padding(.vertical, 9)
             .background(selected ? Theme.peach : Color.clear)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: selected)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
