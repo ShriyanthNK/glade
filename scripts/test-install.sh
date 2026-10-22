@@ -74,6 +74,11 @@ ok "look list / add / use / remove, built-in shipped in the bundle"
 "$GLADE" scenery on | grep -q "scenery on" && [ "$(jq .sceneryOn "$GLADE_HOME/config.json")" = "true" ] || fail "scenery on did not write config"
 "$GLADE" scenery off >/dev/null && [ "$("$GLADE" scenery status)" = "off" ] || fail "scenery off did not write config"
 ok "scenery on / off"
+"$GLADE" statusline install | grep -q "installed" || fail "statusline install failed"
+[ "$("$GLADE" statusline status)" = "installed" ] || fail "statusline status wrong"
+echo '{"model":{"display_name":"Opus"},"context_window":{"used_percentage":92}}' | "$GLADE_HOME/statusline.sh" | grep -q "HELLOOO" || fail "installed status line script did not render"
+"$GLADE" statusline uninstall >/dev/null && [ "$("$GLADE" statusline status)" = "not installed" ] || fail "statusline uninstall failed"
+ok "status line install / render / uninstall"
 "$GLADE" quit; sleep 1
 
 ./uninstall.sh >/dev/null 2>&1 || fail "uninstall.sh exited non-zero"

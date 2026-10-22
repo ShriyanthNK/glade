@@ -27,7 +27,9 @@ A `claude-buddy` command stays linked to `glade` so old scripts keep working.
     glade hooks install|uninstall|status         manage the Claude Code hooks
     glade scenery on|off|status      show the look behind Glade terminal windows
     glade terminal open        open a Terminal.app window in the Glade profile
+    glade statusline install [--replace]|uninstall|status   Mochi in Claude Code's status line
     glade hide | quit
+| quit
 | quit
 | quit
 

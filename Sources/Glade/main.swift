@@ -10,6 +10,7 @@ func usage() {
       glade snooze MINUTES|forever|clear      silence the buddy
       glade open [home|looks|alerts|claude-code|about]  open the Glade window
       glade hooks install|uninstall|status            manage the Claude Code hooks
+      glade statusline install [--replace]|uninstall|status   Mochi in Claude Code's status line
       glade scenery on|off|status                     show the look behind Glade terminals
       glade terminal open                             open a Terminal.app window in the Glade profile
       glade look list|use ID|add PHOTO|remove ID      manage backdrops (add --out FILE.png just exports)
@@ -154,6 +155,26 @@ case "look":
         } catch { print("\(error)"); exit(1) }
     default: print(usage); exit(1)
     }
+case "statusline":
+    let sl = StatusLineInstaller()
+    do {
+        switch args.count > 1 ? args[1] : "status" {
+        case "install":
+            let b = try sl.install(replacingOther: args.contains("--replace"))
+            print("status line installed" + (b.map { " (backup: \($0))" } ?? ""))
+        case "uninstall":
+            let b = try sl.uninstall()
+            print(b.map { "status line removed (backup: \($0))" } ?? "Glade's status line is not installed")
+        case "status":
+            switch sl.status() {
+            case .installed: print("installed")
+            case .notInstalled: print("not installed")
+            case .otherInUse(let cmd): print("another status line is in use: \(cmd)")
+            case .unreadable: print("settings.json is not valid JSON"); exit(1)
+            }
+        default: print("usage: glade statusline install [--replace]|uninstall|status"); exit(1)
+        }
+    } catch { print("\(error)"); exit(1) }
 case "scenery":
     var c = Config.load()
     switch args.count > 1 ? args[1] : "status" {
