@@ -68,4 +68,9 @@ public enum SceneryMath {
     public static func backdropScale(windowWidth: CGFloat, windowHeight: CGFloat) -> CGFloat {
         max(1, max(windowWidth / CGFloat(LookPipeline.width), windowHeight / CGFloat(LookPipeline.height)).rounded(.up))
     }
+
+    /// Scale that makes a smooth (not pixelated) backdrop of this size just cover a window; it can be fractional.
+    public static func smoothScale(imageWidth: CGFloat, imageHeight: CGFloat, windowWidth: CGFloat, windowHeight: CGFloat) -> CGFloat {
+        max(windowWidth / max(1, imageWidth), windowHeight / max(1, imageHeight))
+    }
 }

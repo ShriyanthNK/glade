@@ -84,4 +84,21 @@ final class LookStoreTests: XCTestCase {
         XCTAssertThrowsError(try store.add(photo: URL(fileURLWithPath: bad), name: "x"))
         XCTAssertEqual(store.all().count, 1)
     }
+
+    func testLooksSavedBeforeThePixelOptionAreStillPixelArt() throws {
+        let json = #"{"id":"user-old","name":"Old","fireflies":false,"builtin":false}"#
+        let look = try JSONDecoder().decode(Look.self, from: Data(json.utf8))
+        XCTAssertTrue(look.pixelated)
+    }
+
+    func testSmoothLookIsRemembered() throws {
+        let dir = NSTemporaryDirectory() + "glade-smooth-" + UUID().uuidString
+        defer { try? FileManager.default.removeItem(atPath: dir) }
+        let store = LookStore(userDir: dir, builtinDir: LookStore.defaultBuiltinDir())
+        var o = LookPipeline.Options(); o.pixelate = false
+        let src = LookPipeline.load(URL(fileURLWithPath: store.builtinDir + "/night-forest.png"))!
+        let look = try store.add(processed: LookPipeline.process(src, options: o).image, name: "Smooth", pixelated: false)
+        XCTAssertFalse(store.all().first { $0.id == look.id }!.pixelated)
+        XCTAssertTrue(store.all()[0].pixelated)
+    }
 }

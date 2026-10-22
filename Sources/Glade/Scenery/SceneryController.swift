@@ -39,7 +39,7 @@ final class SceneryController {
             imageKey = key
             look = l
             image = NSImage(contentsOf: url)
-            scenes.values.forEach { $0.update(image: image, fireflies: l.fireflies) }
+            scenes.values.forEach { $0.update(image: image, fireflies: l.fireflies, pixelated: l.pixelated) }
         }
     }
 
@@ -66,7 +66,7 @@ final class SceneryController {
         for id in scenes.keys where bounds[id] == nil { scenes[id]?.orderOut(nil) }
         for id in scenes.keys where !ids.contains(id) { scenes[id]?.orderOut(nil); scenes[id] = nil }
         for (id, b) in bounds {
-            let scene = scenes[id] ?? SceneWindow(image: image, fireflies: look.fireflies)
+            let scene = scenes[id] ?? SceneWindow(image: image, fireflies: look.fireflies, pixelated: look.pixelated)
             scenes[id] = scene
             scene.place(SceneryMath.cocoaRect(cg: b, primaryScreenHeight: primaryH), below: id)
         }
@@ -84,8 +84,8 @@ final class SceneryController {
 final class SceneWindow: NSWindow {
     private let view: SceneView
 
-    init(image: NSImage?, fireflies: Bool) {
-        view = SceneView(image: image, fireflies: fireflies)
+    init(image: NSImage?, fireflies: Bool, pixelated: Bool) {
+        view = SceneView(image: image, fireflies: fireflies, pixelated: pixelated)
         super.init(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: .borderless, backing: .buffered, defer: false)
         level = .normal
         collectionBehavior = [.ignoresCycle]
@@ -100,7 +100,7 @@ final class SceneWindow: NSWindow {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
-    func update(image: NSImage?, fireflies: Bool) { view.image = image; view.fireflies = fireflies }
+    func update(image: NSImage?, fireflies: Bool, pixelated: Bool) { view.pixelated = pixelated; view.image = image; view.fireflies = fireflies }
 
     func place(_ rect: NSRect, below id: Int) {
         if frame != rect { setFrame(rect, display: true) }
@@ -112,6 +112,8 @@ final class SceneWindow: NSWindow {
 /// layer with looping position and glow animations. The CPU only moves the window to follow the terminal.
 final class SceneView: NSView {
     var image: NSImage? { didSet { updateBackdrop() } }
+    /// Pixel art is scaled by whole numbers with hard edges; a smooth picture is scaled to cover, with smoothing.
+    var pixelated: Bool { didSet { applyFilter(); laidOut = .zero; needsLayout = true } }
     var fireflies: Bool { didSet { rebuildFireflies() } }
     private let backdrop = CALayer()
     private var flyLayers: [CALayer] = []
@@ -119,19 +121,24 @@ final class SceneView: NSView {
     private let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     private static let plum = NSColor(red: 0x2A / 255.0, green: 0x1A / 255.0, blue: 0x26 / 255.0, alpha: 1)
 
-    init(image: NSImage?, fireflies: Bool) {
+    init(image: NSImage?, fireflies: Bool, pixelated: Bool) {
         self.image = image
         self.fireflies = fireflies
+        self.pixelated = pixelated
         super.init(frame: .zero)
         wantsLayer = true
         layer?.backgroundColor = Self.plum.cgColor
-        backdrop.magnificationFilter = .nearest
-        backdrop.minificationFilter = .nearest
+        applyFilter()
         backdrop.contentsGravity = .resize
         layer?.addSublayer(backdrop)
         updateBackdrop()
     }
     required init?(coder: NSCoder) { fatalError() }
+
+    private func applyFilter() {
+        backdrop.magnificationFilter = pixelated ? .nearest : .trilinear
+        backdrop.minificationFilter = pixelated ? .nearest : .trilinear
+    }
 
     override func viewDidChangeBackingProperties() { super.viewDidChangeBackingProperties(); updateBackdrop() }
 
@@ -145,7 +152,10 @@ final class SceneView: NSView {
         guard bounds.size != laidOut else { return }
         laidOut = bounds.size
         guard let image = image else { return }
-        let scale = SceneryMath.backdropScale(windowWidth: bounds.width, windowHeight: bounds.height)
+        let scale = pixelated
+            ? SceneryMath.backdropScale(windowWidth: bounds.width, windowHeight: bounds.height)
+            : SceneryMath.smoothScale(imageWidth: image.size.width, imageHeight: image.size.height,
+                                      windowWidth: bounds.width, windowHeight: bounds.height)
         let w = image.size.width * scale, h = image.size.height * scale
         CATransaction.begin(); CATransaction.setDisableActions(true)
         backdrop.frame = CGRect(x: (bounds.width - w) / 2, y: 0, width: w, height: h)   // anchored to the bottom: trees stay in view

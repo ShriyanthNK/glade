@@ -8,9 +8,21 @@ public struct Look: Codable, Equatable, Identifiable {
     /// Drifting fireflies are part of the Night Forest; photos get none by default.
     public var fireflies: Bool
     public var builtin: Bool
+    /// Pixel art is drawn with hard pixels; a smooth look is a normal picture and is drawn with smoothing.
+    public var pixelated: Bool
 
-    public init(id: String, name: String, fireflies: Bool, builtin: Bool) {
-        self.id = id; self.name = name; self.fireflies = fireflies; self.builtin = builtin
+    public init(id: String, name: String, fireflies: Bool, builtin: Bool, pixelated: Bool = true) {
+        self.id = id; self.name = name; self.fireflies = fireflies; self.builtin = builtin; self.pixelated = pixelated
+    }
+
+    // looks saved before the pixel option existed have no "pixelated" key, and were all pixel art
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        fireflies = try c.decode(Bool.self, forKey: .fireflies)
+        builtin = try c.decode(Bool.self, forKey: .builtin)
+        pixelated = try c.decodeIfPresent(Bool.self, forKey: .pixelated) ?? true
     }
 }
 
@@ -63,10 +75,10 @@ public struct LookStore {
     }
 
     @discardableResult
-    public func add(processed image: CGImage, name: String, fireflies: Bool = false) throws -> Look {
+    public func add(processed image: CGImage, name: String, fireflies: Bool = false, pixelated: Bool = true) throws -> Look {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let look = Look(id: "user-" + UUID().uuidString.prefix(8).lowercased(),
-                        name: clean.isEmpty ? "My look" : String(clean.prefix(40)), fireflies: fireflies, builtin: false)
+                        name: clean.isEmpty ? "My look" : String(clean.prefix(40)), fireflies: fireflies, builtin: false, pixelated: pixelated)
         let dir = userDir + "/" + look.id
         try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         do {
@@ -84,7 +96,7 @@ public struct LookStore {
         guard let src = LookPipeline.load(photo) else {
             throw NSError(domain: "Glade", code: 3, userInfo: [NSLocalizedDescriptionKey: "Couldn't read \(photo.lastPathComponent) as an image"])
         }
-        return try add(processed: LookPipeline.process(src, options: options).image, name: name)
+        return try add(processed: LookPipeline.process(src, options: options).image, name: name, pixelated: options.pixelate)
     }
 
     /// Deletes a user look. Built-ins are never removed.

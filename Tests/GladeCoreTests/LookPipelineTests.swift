@@ -104,4 +104,67 @@ final class LookPipelineTests: XCTestCase {
         let back = LookPipeline.load(url)
         XCTAssertEqual(back?.width, 480); XCTAssertEqual(back?.height, 270)
     }
+
+    // MARK: pixelate and crop
+
+    /// Left half dark red, right half dark blue: easy to tell which side a crop came from.
+    func twoHalves(_ w: Int, _ h: Int) -> CGImage {
+        image(w, h) { x, _ in x < w / 2 ? (90, 10, 10, 255) : (10, 10, 90, 255) }
+    }
+
+    func testSmoothOutputIsLargerAndNotLimitedToThePaletteGrid() {
+        var o = LookPipeline.Options(); o.pixelate = false
+        let img = image(1600, 900) { x, y in (UInt8(x % 97), UInt8(y % 89), UInt8((x + y) % 83), 255) }
+        let r = LookPipeline.process(img, options: o)
+        XCTAssertEqual(r.image.width, 1280); XCTAssertEqual(r.image.height, 720)
+        let px = pixels(r.image)
+        var colors = Set<UInt32>()
+        for i in stride(from: 0, to: px.count, by: 4) { colors.insert(UInt32(px[i]) << 16 | UInt32(px[i + 1]) << 8 | UInt32(px[i + 2])) }
+        XCTAssertGreaterThan(colors.count, 1000)    // pixel art has at most 216
+    }
+
+    func testSmoothStillKeepsTextReadable() {
+        var o = LookPipeline.Options(); o.pixelate = false
+        let r = LookPipeline.process(solid(1200, 800, 255), options: o)
+        XCTAssertGreaterThan(r.darkening, 0.3)
+        XCTAssertLessThanOrEqual(LookPipeline.worstCaseLuminance(of: r.image, terminalTint: o.terminalTint),
+                                 LookPipeline.maxBackgroundLuminance + 0.004)
+    }
+
+    func testCropPicksTheChosenSide() {
+        let src = twoHalves(1600, 900)
+        func average(_ crop: CropRegion) -> (r: Double, b: Double) {
+            var o = LookPipeline.Options(); o.crop = crop; o.calm = 0
+            let px = pixels(LookPipeline.process(src, options: o).image)
+            var r = 0.0, b = 0.0, n = 0.0
+            for i in stride(from: 0, to: px.count, by: 4) { r += Double(px[i]); b += Double(px[i + 2]); n += 1 }
+            return (r / n, b / n)
+        }
+        let left = average(CropRegion(centerX: 0.1, centerY: 0.5, zoom: 4))
+        let right = average(CropRegion(centerX: 0.9, centerY: 0.5, zoom: 4))
+        XCTAssertGreaterThan(left.r, left.b + 20)
+        XCTAssertGreaterThan(right.b, right.r + 20)
+    }
+
+    func testTallPhotoCropMovesVertically() {
+        // top half bright-ish red, bottom half blue, in a tall photo
+        let src = image(900, 1600) { _, y in y < 800 ? (90, 10, 10, 255) : (10, 10, 90, 255) }
+        func redShare(_ cy: Double) -> Bool {
+            var o = LookPipeline.Options(); o.crop = CropRegion(centerX: 0.5, centerY: cy, zoom: 1)
+            let px = pixels(LookPipeline.process(src, options: o).image)
+            var r = 0.0, b = 0.0
+            for i in stride(from: 0, to: px.count, by: 4) { r += Double(px[i]); b += Double(px[i + 2]) }
+            return r > b
+        }
+        XCTAssertTrue(redShare(0.0))      // clamped to the top
+        XCTAssertFalse(redShare(1.0))     // clamped to the bottom
+    }
+
+    func testDefaultCropIsTheMiddle() {
+        let src = twoHalves(1600, 900)
+        var o = LookPipeline.Options(); o.calm = 0
+        let a = pixels(LookPipeline.process(src).image)
+        o.crop = CropRegion(centerX: 0.5, centerY: 0.5, zoom: 1)
+        XCTAssertEqual(a, pixels(LookPipeline.process(src, options: o).image))
+    }
 }

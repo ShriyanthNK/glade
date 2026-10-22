@@ -2,12 +2,15 @@ import CoreGraphics
 import Foundation
 import ImageIO
 
-/// Turns any photo into a Hoot-style pixel backdrop: cover-crop to 16:9, scale to 480x270, reduce to a
-/// limited palette with ordered dithering, then darken toward plum just enough that light terminal text
-/// stays readable (WCAG 4.5:1) on top of it.
+/// Turns any photo into a backdrop: crop to 16:9 (the middle of the photo unless the user chose a region), then either
+/// scale to 480x270 and reduce to a limited palette with ordered dithering (pixel art), or scale smoothly to 1280x720.
+/// Either way it darkens toward plum just enough that light terminal text stays readable (WCAG 4.5:1) on top.
 public enum LookPipeline {
     public static let width = 480
     public static let height = 270
+    /// Size of a backdrop that is not pixelated.
+    public static let smoothWidth = 1280
+    public static let smoothHeight = 720
 
     public struct Options: Equatable {
         /// Opacity of the terminal's own background tint that sits on top of the backdrop.
@@ -16,6 +19,10 @@ public enum LookPipeline {
         public var calm = 0.0
         /// Colors per channel (6 gives 216 colors, which reads as pixel art).
         public var levels = 6
+        /// Pixel art (480x270, limited palette, dithered) or a smooth 1280x720 picture.
+        public var pixelate = true
+        /// Which part of the photo to use. The default is the middle, as large as it can be.
+        public var crop = CropRegion()
         public init() {}
     }
 
@@ -47,14 +54,10 @@ public enum LookPipeline {
     }
 
     public static func process(_ source: CGImage, options: Options = Options()) -> Result {
-        let W = width, H = height
-        // cover-crop to 16:9 and scale down
-        let iw = Double(source.width), ih = Double(source.height)
-        let want = Double(W) / Double(H)
-        let cw = iw / ih > want ? ih * want : iw
-        let ch = iw / ih > want ? ih : iw / want
-        let crop = source.cropping(to: CGRect(x: ((iw - cw) / 2).rounded(.down), y: ((ih - ch) / 2).rounded(.down),
-                                              width: cw.rounded(.down), height: ch.rounded(.down))) ?? source
+        let W = options.pixelate ? width : smoothWidth, H = options.pixelate ? height : smoothHeight
+        // crop to 16:9 and scale
+        let region = options.crop.pixelRect(imageWidth: source.width, imageHeight: source.height)
+        let crop = source.cropping(to: region) ?? source
         var px = [UInt8](repeating: 0, count: W * H * 4)
         let space = CGColorSpace(name: CGColorSpace.sRGB)!
         px.withUnsafeMutableBytes { buf in
@@ -66,27 +69,28 @@ public enum LookPipeline {
             ctx.draw(crop, in: CGRect(x: 0, y: 0, width: W, height: H))
         }
 
-        // palette reduction with ordered dithering
+        // palette reduction with ordered dithering (pixel art only)
         let levels = Double(max(2, options.levels))
         let ditherScale = 1 - 0.6 * min(1, max(0, options.calm))
-        for y in 0..<H { for x in 0..<W {
+        if options.pixelate { for y in 0..<H { for x in 0..<W {
             let i = (y * W + x) * 4
             let d = (bayer[y % 4][x % 4] / 16.0 - 0.5) / levels * ditherScale
             for c in 0..<3 {
                 let v = min(1, max(0, Double(px[i + c]) / 255.0 + d))
                 px[i + c] = UInt8((v * (levels - 1)).rounded() / (levels - 1) * 255)
             }
-        }}
+        }}}
 
         // smallest darkening toward plum so the 98th-percentile pixel keeps 4.5:1 under the terminal tint
         let tint = options.terminalTint
         let need = maxBackgroundLuminance - 0.003   // margin for the subsampling and histogram binning
-        // every 3rd pixel and a 4096-bin histogram keep the solver fast enough for a live slider
+        // about 43,000 sampled pixels and a 4096-bin histogram keep the solver fast enough for a live slider
+        let step = max(3, W * H / 43_200)
         let bins = 4096
         func worst(_ a: Double) -> Double {
             var hist = [Int](repeating: 0, count: bins + 1)
             var n = 0
-            for p in stride(from: 0, to: W * H, by: 3) {
+            for p in stride(from: 0, to: W * H, by: step) {
                 var e = [0.0, 0.0, 0.0]
                 for c in 0..<3 {
                     let s = Double(px[p * 4 + c]) / 255.0

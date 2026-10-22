@@ -10,7 +10,7 @@ struct LookPreview: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             if let img = NSImage(contentsOf: LookStore().backdropURL(look)) {
-                Image(nsImage: img).resizable().interpolation(.none).aspectRatio(contentMode: .fill)
+                Image(nsImage: img).resizable().interpolation(look.pixelated ? .none : .high).aspectRatio(contentMode: .fill)
             } else {
                 Theme.ink
             }

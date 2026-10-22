@@ -62,7 +62,7 @@ struct SecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(Theme.label(14))
+            .font(Theme.ui(14).weight(.semibold))     // small pixel type is hard to read on a standard-resolution display
             .foregroundColor(Theme.paper.opacity(enabled ? 1 : 0.45))
             .padding(.horizontal, 12).padding(.vertical, 6)
             .background(configuration.isPressed ? Theme.surfaceHi : Theme.ink)
