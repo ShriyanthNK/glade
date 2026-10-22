@@ -1,4 +1,4 @@
-// Procedural 32x32 pixel mascots in the style of Mochi: plum outline, light from the top-left, five moods.
+// Procedural 32x32 pixel mascots in a pixel style: plum outline, light from the top-left, five moods.
 // Each draw function returns {px: Uint8Array(32*32) of palette indexes, pal: [css colors]}.
 const N = 32;
 
@@ -43,7 +43,7 @@ class Canvas32 {
       if (this.get(x + 1, y) || this.get(x - 1, y) || this.get(x, y + 1) || this.get(x, y - 1)) add.push([x, y]);
     add.forEach(([x, y]) => this.set(x, y, ink));
   }
-  // 3-wide x 5-tall exclamation / question marks, as in Mochi's signs
+  // 3-wide x 5-tall exclamation / question marks, as signs
   glyph(ch, x, y, c) {
     const rows = ch === '!' ? ['010', '010', '010', '000', '010'] : ['110', '001', '010', '000', '010'];
     rows.forEach((r, j) => [...r].forEach((b, i) => { if (b === '1') this.set(x + i, y + j, c); }));

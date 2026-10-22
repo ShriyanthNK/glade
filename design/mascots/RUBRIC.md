@@ -12,7 +12,7 @@ For each of the two candidates (Glim the firefly, Hoot the owl), across all five
    furious, delighted) is legible at 64px, not only at 256px.
 4. **Clean pixel art.** One consistent 1px plum outline, one light direction (top left), a small palette, no stray
    or noisy pixels, no accidental gaps in outlines, dithering only where it is meant (the firefly halo).
-5. **Appeal.** Cute and friendly, in the same family as Mochi (soft highlights, plum outline, chunky shapes). Not creepy,
+5. **Appeal.** Cute and friendly, in the same family (soft highlights, plum outline, chunky shapes). Not creepy,
    not a different art style.
 6. **Fits the 32x32 frame.** Nothing is clipped at the top, sides or bottom in any mood or animation time.
 7. **Animation reads.** Across the frames provided, the motion supports the mood (the firefly's glow pulses faster as
