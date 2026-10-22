@@ -16,7 +16,7 @@ struct ClaudeCodePage: View {
                         Rectangle().fill(status == .installed ? Theme.sprout : Theme.sparkle).frame(width: 14, height: 14)
                         Text(statusText).font(Theme.title(20)).foregroundColor(Theme.paper)
                     }
-                    Text("Glade listens to four Claude Code hooks (Notification, Stop, UserPromptSubmit, PostToolUse) in \(claudeSettingsPath). Before it changes that file it saves a backup next to it, and it only ever touches its own entries.")
+                    Text("Glade listens to five Claude Code hooks (Notification, PermissionRequest, Stop, UserPromptSubmit, PostToolUse) in \(claudeSettingsPath). Before it changes that file it saves a backup next to it, and it only ever touches its own entries.")
                         .font(.system(size: 13)).foregroundColor(Theme.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     HStack {

@@ -27,6 +27,8 @@ struct AlertsPage: View {
             }
             PixelCard {
                 VStack(alignment: .leading, spacing: 14) {
+                    Toggle("Stay quiet while I'm already in the terminal", isOn: bind(\.smartAlerts)).toggleStyle(PixelToggleStyle())
+                    Toggle("Say what Claude wants or did, not just \"waiting\"", isOn: bind(\.showDetails)).toggleStyle(PixelToggleStyle())
                     Toggle("Play a soft chime when Mochi appears", isOn: bind(\.chime)).toggleStyle(PixelToggleStyle())
                     HStack {
                         Text(snoozeDescription(config) ?? "Alerts are on.")

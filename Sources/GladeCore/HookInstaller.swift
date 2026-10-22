@@ -14,7 +14,7 @@ payload=$(cat | tr -d '\\n')
   msg=$(printf '%s\\n%s\\n\\n%s\\n' "$ev" "${__CFBundleIdentifier:-}" "$payload")
   if ! printf '%s' "$msg" | /usr/bin/nc -U -w 1 "$sock" >/dev/null 2>&1; then
     case "$ev" in
-      Notification|Stop)
+      Notification|Stop|PermissionRequest)
         /usr/bin/open -g "$home/Glade.app"
         i=0
         while [ "$i" -lt 25 ]; do
@@ -35,7 +35,7 @@ public let claudeSettingsPath = ProcessInfo.processInfo.environment["GLADE_CLAUD
 /// Adds and removes Glade's entries in Claude Code's settings.json, leaving everything else alone.
 /// A timestamped backup is written next to the file before every change.
 public struct HookInstaller {
-    public static let events = ["Notification", "Stop", "UserPromptSubmit", "PostToolUse"]
+    public static let events = ["Notification", "Stop", "UserPromptSubmit", "PostToolUse", "PermissionRequest"]
     /// Substrings that mark a hook command as ours: this install, and the earlier claude-buddy one.
     static let marks = ["/.glade/hook.sh", "/.claude-buddy/hook.sh"]
 

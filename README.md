@@ -9,7 +9,7 @@ Native Swift/SwiftUI. Lives in the menu bar; the Glade window ((Home, Looks, Ter
 
     ./install.sh
 
-Builds the app, installs it to `~/.glade/`, merges four hooks into `~/.claude/settings.json` (backup written
+Builds the app, installs it to `~/.glade/`, merges five hooks into `~/.claude/settings.json` (backup written
 next to it first), and links `glade` into `~/.local/bin`. Needs `jq` (ships with macOS 15+) and a Swift
 toolchain. Restart running Claude Code sessions afterwards.
 
@@ -38,9 +38,13 @@ A `claude-buddy` command stays linked to `glade` so old scripts keep working.
 | Hook | Effect |
 |---|---|
 | Notification | "Claude's waiting on you" + the hook message, after 5s |
-| Stop | "Claude's done, your turn", after 20s |
+| PermissionRequest | what Claude wants ("Run: npm test", "Edit: Views.swift") goes in the waiting bubble |
+| Stop | "Claude's done, your turn" + a one-line summary of Claude's last message, after 20s |
 | UserPromptSubmit, PostToolUse | hide (or cancel the pending show) immediately |
 
+- Smart alerts (on by default): if the app running the session is frontmost and you used the keyboard or mouse in
+  the last 8 seconds, Mochi stays away and checks again every 3 seconds; he hides himself once you are typing
+  in the terminal. `glade test` ignores this.
 - Events are matched by session, so a reply in one session doesn't hide another's buddy.
 - The hook script returns in about 10 ms; the work runs in a detached background job.
 - Click Mochi or its bubble to jump to the terminal app Claude runs in (detected from

@@ -31,10 +31,10 @@ echo '{"chime": true, "waitDelay": 9, "doneDelay": 12, "giveUpAfter": 180, "snoo
 
 ./install.sh >/dev/null 2>&1 || fail "install.sh exited non-zero"
 S="$TH/.claude/settings.json"
-for ev in Notification Stop UserPromptSubmit PostToolUse; do
+for ev in Notification Stop UserPromptSubmit PostToolUse PermissionRequest; do
   jq -e --arg ev "$ev" '[.hooks[$ev][].hooks[].command] | any(endswith("/.glade/hook.sh " + $ev))' "$S" >/dev/null || fail "hook $ev missing"
 done
-ok "four hooks installed"
+ok "five hooks installed"
 [ "$("$GLADE_HOME/bin/glade" hooks status)" = "installed" ] || fail "hooks status did not report installed"
 jq -e '[.hooks.Stop[].hooks[].command] | any(contains("/.claude-buddy/"))' "$S" >/dev/null && fail "old hook still present"
 ok "old claude-buddy hook replaced"

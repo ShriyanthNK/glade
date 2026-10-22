@@ -25,6 +25,12 @@ func snoozeDescription(_ c: Config) -> String? {
 /// Shows Mochi now, through the same socket path the Claude Code hooks use.
 func sendTest(done: Bool, age: Double = 0) {
     var json: [String: Any] = ["session_id": "test", "cwd": FileManager.default.currentDirectoryPath]
-    if !done { json["message"] = "Claude needs your permission to use Bash" }
+    if done {
+        json["last_assistant_message"] = "Refactored the parser and fixed 3 failing tests. All 42 tests pass now."
+    } else {
+        json["message"] = "Claude needs your permission to use Bash"
+        json["tool_name"] = "Bash"
+        json["tool_input"] = ["command": "npm test --coverage"]
+    }
     _ = sendEvent("Test", flags: "kind=\(done ? "done" : "wait") age=\(age)", json: json)
 }

@@ -99,10 +99,7 @@ case "test":
         i += 1
     }
     guard ensureDaemon() else { print("could not start Glade.app"); exit(1) }
-    let msg = kind == "done" ? "" : "Claude needs your permission to use Bash"
-    var json: [String: Any] = ["session_id": "test", "cwd": FileManager.default.currentDirectoryPath]
-    if !msg.isEmpty { json["message"] = msg }
-    _ = sendEvent("Test", flags: "kind=\(kind == "done" ? "done" : "wait") age=\(age)", json: json)
+    sendTest(done: kind == "done", age: Double(age) ?? 0)
     print("buddy sent (\(kind))")
 case "snooze":
     guard let c = applySnooze(args.count > 1 ? args[1] : "") else { print("usage: glade snooze MINUTES|forever|clear"); exit(1) }

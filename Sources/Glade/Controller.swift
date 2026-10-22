@@ -7,13 +7,6 @@ final class BuddyPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
-let knownTerminals = [
-    "com.apple.Terminal", "com.googlecode.iterm2", "com.mitchellh.ghostty", "com.microsoft.VSCode",
-    "com.microsoft.VSCodeInsiders", "com.todesktop.230313mzl4w4u92", "com.exafunction.windsurf",
-    "dev.warp.Warp-Stable", "net.kovidgoyal.kitty", "com.github.wez.wezterm", "org.alacritty",
-    "co.zeit.hyper", "com.jetbrains.intellij", "com.jetbrains.pycharm", "dev.zed.Zed",
-]
-
 final class BuddyController {
     let model = BuddyModel()
     private var panel: BuddyPanel!
@@ -24,6 +17,8 @@ final class BuddyController {
     private var hideTimer: Timer?
     private var tracker: Timer?
     private var screen: NSScreen?
+    private var details: [String: String] = [:]   // what Claude wants, by session, from PermissionRequest
+    private var currentForced = false              // shown by `glade test`: never auto-hidden or suppressed
 
     func start() {
         let host = ClickHostingView(rootView: BuddyRoot(model: model))
@@ -51,13 +46,16 @@ final class BuddyController {
     func handle(_ m: Message) {
         let cfg = Config.load()
         switch m.event {
-        case "Notification" where snoozed(cfg): break
-        case "Stop" where snoozed(cfg): break
+        case "Notification" where snoozed(cfg), "Stop" where snoozed(cfg), "PermissionRequest" where snoozed(cfg): break
+        case "PermissionRequest":
+            if let s = m.session, let d = m.detail { details[s] = d }
+            schedule(.waiting, m, after: cfg.waitDelay)
         case "Notification": schedule(.waiting, m, after: cfg.waitDelay)
         case "Stop": schedule(.done, m, after: cfg.doneDelay)
-        case "Test": schedule(m.flags["kind"] == "done" ? .done : .waiting, m, after: 0)
+        case "Test": schedule(m.flags["kind"] == "done" ? .done : .waiting, m, after: 0, force: true)
         case "UserPromptSubmit", "PostToolUse", "SessionEnd":
             if m.session == nil || m.session == pendingSession { cancelPending() }
+            if let s = m.session { details[s] = nil } else { details.removeAll() }
             if m.session == nil || m.session == currentSession { hide() }
         case "Hide": cancelPending(); hide()
         case "Settings", "Open": AppWindowController.shared.show(page: m.flags["tab"].flatMap(AppPage.init(rawValue:)))
@@ -70,22 +68,43 @@ final class BuddyController {
 
     private func cancelPending() { pending?.invalidate(); pending = nil; pendingSession = nil }
 
-    private func schedule(_ kind: Mood, _ m: Message, after delay: Double) {
+    private func schedule(_ kind: Mood, _ m: Message, after delay: Double, force: Bool = false) {
         cancelPending()
-        if delay <= 0 { show(kind, m); return }
         pendingSession = m.session
-        let t = Timer(timeInterval: delay, repeats: false) { [weak self] _ in self?.show(kind, m) }
+        if delay <= 0 { attempt(kind, m, force: force); return }
+        let t = Timer(timeInterval: delay, repeats: false) { [weak self] _ in self?.attempt(kind, m, force: force) }
         RunLoop.main.add(t, forMode: .common)
         pending = t
     }
 
+    /// Shows Mochi unless the user is already looking at the session. While they are, check again every few
+    /// seconds: the hooks cancel this as soon as Claude moves on, and if they look away it still gets through.
+    private func attempt(_ kind: Mood, _ m: Message, force: Bool) {
+        if !force, Config.load().smartAlerts, userIsLookingAtSession(m.bundle, activeWithin: 8) {
+            let t = Timer(timeInterval: 3, repeats: false) { [weak self] _ in self?.attempt(kind, m, force: false) }
+            RunLoop.main.add(t, forMode: .common)
+            pending = t
+            return
+        }
+        show(kind, m, forced: force)
+    }
+
+    private func userIsLookingAtSession(_ bundle: String, activeWithin: Double) -> Bool {
+        let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+        return AlertPolicy.shouldSuppress(frontmostBundle: NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+                                          idleSeconds: idle, sessionBundle: bundle, activeWithin: activeWithin)
+    }
+
     // MARK: show / hide
 
-    private func show(_ kind: Mood, _ m: Message) {
+    private func show(_ kind: Mood, _ m: Message, forced: Bool = false) {
         cancelPending()
+        currentForced = forced
         hideTimer?.invalidate(); hideTimer = nil
         model.kind = kind
-        model.message = m.text ?? (kind == .waiting ? "Needs your input" : "")
+        let cfg = Config.load()
+        let content: String? = cfg.showDetails ? (kind == .waiting ? (m.session.flatMap { details[$0] } ?? m.detail) : m.summary) : nil
+        model.message = content ?? m.text ?? (kind == .waiting ? "Needs your input" : "")
         model.project = m.cwd.map { ($0 as NSString).lastPathComponent } ?? ""
         model.shownAt = Date()
         model.phaseStart = Date()
@@ -97,7 +116,7 @@ final class BuddyController {
         currentBundle = m.bundle
         place(on: screenUnderMouse())
         panel.orderFrontRegardless()
-        if Config.load().chime { NSSound(named: kind == .done ? "Glass" : "Tink")?.apply { $0.volume = 0.35; $0.play() } }
+        if cfg.chime { NSSound(named: kind == .done ? "Glass" : "Tink")?.apply { $0.volume = 0.35; $0.play() } }
     }
 
     func hide() {
@@ -116,7 +135,7 @@ final class BuddyController {
     }
 
     private func activateTerminal() {
-        for id in [currentBundle] + knownTerminals where !id.isEmpty {
+        for id in [currentBundle] + knownTerminalBundles where !id.isEmpty {
             if !NSRunningApplication.runningApplications(withBundleIdentifier: id).isEmpty {
                 let p = Process()
                 p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
@@ -146,6 +165,9 @@ final class BuddyController {
         if model.visible, model.exitStart == nil {
             let c = Config.load()
             if (c.giveUpAfter > 0 && Date().timeIntervalSince(model.shownAt) > c.giveUpAfter) || snoozed(c) { hide() }
+            // they came to the terminal and are typing: they have seen it
+            else if c.smartAlerts, !currentForced, Date().timeIntervalSince(model.shownAt) > 3,
+                    userIsLookingAtSession(currentBundle, activeWithin: 2) { hide() }
         }
         guard model.visible else { return }
         let mouse = NSEvent.mouseLocation

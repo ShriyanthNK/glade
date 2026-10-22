@@ -93,7 +93,7 @@ final class HookInstallerTests: XCTestCase {
 
     func testPartialStatus() throws {
         write(#"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"\#(hook) Stop"}]}]}}"#)
-        XCTAssertEqual(installer.status(), .partial(missing: ["Notification", "UserPromptSubmit", "PostToolUse"]))
+        XCTAssertEqual(installer.status(), .partial(missing: ["Notification", "UserPromptSubmit", "PostToolUse", "PermissionRequest"]))
     }
 
     func testInvalidJSONThrowsAndLeavesFileAlone() {

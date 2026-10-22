@@ -12,6 +12,8 @@ public struct Message {
     public var session: String?
     public var cwd: String?
     public var text: String?
+    public var detail: String?      // what Claude wants to do ("Run: npm test"), from PermissionRequest / PreToolUse
+    public var summary: String?     // one line on what Claude just did, from Stop
     public init() {}
 }
 
@@ -25,6 +27,8 @@ public struct Config: Equatable {
     public var sceneryOn = false             // draw that backdrop behind the Glade terminal window
     public var lookChosen = false            // the user has picked a look (onboarding step)
     public var onboarded = false             // the Get started checklist is done or dismissed
+    public var smartAlerts = true            // stay quiet while the user is already in the terminal
+    public var showDetails = true            // say what Claude wants or did, not just "Claude's waiting"
     public init() {}
 
     public static var path: String { supportDir + "/config.json" }
@@ -42,6 +46,8 @@ public struct Config: Equatable {
         if let v = j["sceneryOn"] as? Bool { c.sceneryOn = v }
         if let v = j["lookChosen"] as? Bool { c.lookChosen = v }
         if let v = j["onboarded"] as? Bool { c.onboarded = v }
+        if let v = j["smartAlerts"] as? Bool { c.smartAlerts = v }
+        if let v = j["showDetails"] as? Bool { c.showDetails = v }
         return c
     }
 
@@ -49,7 +55,8 @@ public struct Config: Equatable {
         let j: [String: Any] = ["chime": chime, "waitDelay": waitDelay, "doneDelay": doneDelay,
                                 "giveUpAfter": giveUpAfter, "snoozeUntil": snoozeUntil,
                                 "lookId": lookId, "sceneryOn": sceneryOn,
-                                "lookChosen": lookChosen, "onboarded": onboarded]
+                                "lookChosen": lookChosen, "onboarded": onboarded,
+                                "smartAlerts": smartAlerts, "showDetails": showDetails]
         let dir = (path as NSString).deletingLastPathComponent
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         if let d = try? JSONSerialization.data(withJSONObject: j, options: [.prettyPrinted, .sortedKeys]) {
@@ -86,6 +93,14 @@ public func parseMessage(_ raw: String) -> Message {
         m.session = j["session_id"] as? String
         m.cwd = j["cwd"] as? String
         m.text = j["message"] as? String
+        if ["PermissionRequest", "PreToolUse", "Test"].contains(m.event), let tool = j["tool_name"] as? String {
+            m.detail = AlertContent.describeTool(name: tool, input: j["tool_input"] as? [String: Any] ?? [:])
+        }
+        if ["Stop", "Test"].contains(m.event) {
+            let last = (j["last_assistant_message"] as? String)
+                ?? (j["transcript_path"] as? String).flatMap { AlertContent.lastAssistantText(transcriptPath: $0) }
+            m.summary = last.flatMap { AlertContent.summarize($0) }
+        }
     }
     return m
 }
