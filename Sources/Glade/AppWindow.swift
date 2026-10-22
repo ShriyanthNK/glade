@@ -3,12 +3,13 @@ import SwiftUI
 import GladeCore
 
 enum AppPage: String, CaseIterable, Identifiable {
-    case home, looks, alerts, claudeCode = "claude-code", about
+    case home, looks, terminal, alerts, claudeCode = "claude-code", about
     var id: String { rawValue }
     var title: String {
         switch self {
         case .home: return "Home"
         case .looks: return "Looks"
+        case .terminal: return "Terminal"
         case .alerts: return "Alerts"
         case .claudeCode: return "Claude Code"
         case .about: return "About"
@@ -18,6 +19,7 @@ enum AppPage: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "house.fill"
         case .looks: return "photo.fill"
+        case .terminal: return "macwindow"
         case .alerts: return "bell.fill"
         case .claudeCode: return "terminal.fill"
         case .about: return "heart.fill"
@@ -92,6 +94,7 @@ struct AppRoot: View {
                     switch nav.page {
                     case .home: HomePage()
                     case .looks: LooksPage()
+                    case .terminal: TerminalPage()
                     case .alerts: AlertsPage()
                     case .claudeCode: ClaudeCodePage()
                     case .about: AboutPage()

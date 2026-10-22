@@ -71,6 +71,9 @@ ID=$("$GLADE" look list | awk '/Test photo/ {print ($1 == "*") ? $2 : $1}')
 "$GLADE" look remove "$ID" >/dev/null
 [ "$(jq -r .lookId "$GLADE_HOME/config.json")" = "night-forest" ] || fail "removing the active look did not fall back"
 ok "look list / add / use / remove, built-in shipped in the bundle"
+"$GLADE" scenery on | grep -q "scenery on" && [ "$(jq .sceneryOn "$GLADE_HOME/config.json")" = "true" ] || fail "scenery on did not write config"
+"$GLADE" scenery off >/dev/null && [ "$("$GLADE" scenery status)" = "off" ] || fail "scenery off did not write config"
+ok "scenery on / off"
 "$GLADE" quit; sleep 1
 
 ./uninstall.sh >/dev/null 2>&1 || fail "uninstall.sh exited non-zero"

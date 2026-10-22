@@ -10,6 +10,8 @@ func usage() {
       glade snooze MINUTES|forever|clear      silence the buddy
       glade open [home|looks|alerts|claude-code|about]  open the Glade window
       glade hooks install|uninstall|status            manage the Claude Code hooks
+      glade scenery on|off|status                     show the look behind Glade terminals
+      glade terminal open                             open a Terminal.app window in the Glade profile
       glade look list|use ID|add PHOTO|remove ID      manage backdrops (add --out FILE.png just exports)
       glade hide                               hide it
       glade chime on|off                       toggle the soft chime
@@ -74,6 +76,7 @@ func runDaemon() {
     let controller = BuddyController()
     controller.start()
     statusItem.start()
+    SceneryController.shared.start()
     let server = Server()
     guard server.start({ controller.handle($0) }) else { fputs("glade: cannot bind socket\n", stderr); exit(1) }
     signal(SIGPIPE, SIG_IGN)
@@ -151,6 +154,18 @@ case "look":
         } catch { print("\(error)"); exit(1) }
     default: print(usage); exit(1)
     }
+case "scenery":
+    var c = Config.load()
+    switch args.count > 1 ? args[1] : "status" {
+    case "on": c.sceneryOn = true; c.save(); print("scenery on (shows behind Glade terminal windows)")
+    case "off": c.sceneryOn = false; c.save(); print("scenery off")
+    case "status": print(c.sceneryOn ? "on, look: \(c.lookId)" : "off")
+    default: print("usage: glade scenery on|off|status"); exit(1)
+    }
+case "terminal":
+    guard args.count > 1, args[1] == "open" else { print("usage: glade terminal open"); exit(1) }
+    if let err = TerminalBridge.openGladeWindow() { print(err); exit(1) }
+    print("opened a Glade terminal")
 case "hooks":
     let installer = HookInstaller()
     do {
