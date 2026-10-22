@@ -1,27 +1,33 @@
+import GladeCore
 import AppKit
 import SwiftUI
 
 func usage() {
     print("""
-    claude-buddy  - animated mascot that shows when Claude Code is waiting on you
+    glade  - Mochi, a pixel mascot that shows when Claude Code is waiting on you
 
-      claude-buddy test [wait|done] [--age SECONDS]   show the buddy right now
-      claude-buddy snooze MINUTES|forever|clear      silence the buddy
-      claude-buddy hide                               hide it
-      claude-buddy chime on|off                       toggle the soft chime
-      claude-buddy delays WAIT DONE                   set delays in seconds (default 5 20)
-      claude-buddy quit                               stop the background app
-      claude-buddy snapshot FILE.png [wait|done] [AGE] [ENTER_SECONDS]
+      glade test [wait|done] [--age SECONDS]   show the buddy right now
+      glade snooze MINUTES|forever|clear      silence the buddy
+      glade hide                               hide it
+      glade chime on|off                       toggle the soft chime
+      glade delays WAIT DONE                   set delays in seconds (default 5 20)
+      glade quit                               stop the background app
+      glade snapshot FILE.png [wait|done] [AGE] [ENTER_SECONDS]
     """)
 }
 
 func ensureDaemon() -> Bool {
     if daemonRunning() { return true }
-    let installed = supportDir + "/ClaudeBuddy.app"
+    let installed = supportDir + "/Glade.app"
     let bundle = FileManager.default.fileExists(atPath: installed) ? installed : Bundle.main.bundlePath
     let p = Process()
-    p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-    p.arguments = ["-g", bundle]
+    if ProcessInfo.processInfo.environment["GLADE_HOME"] != nil {
+        // `open` would start the app with the real environment, so an overridden home is launched directly
+        p.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
+    } else {
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        p.arguments = ["-g", bundle]
+    }
     try? p.run()
     for _ in 0..<30 {
         usleep(100_000)
@@ -57,12 +63,13 @@ func sendEvent(_ event: String, flags: String = "", json: [String: Any] = [:]) -
 
 func runDaemon() {
     if daemonRunning() { exit(0) }   // single instance
+    Config.migrateLegacy()
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)
     let controller = BuddyController()
     controller.start()
     let server = Server()
-    guard server.start({ controller.handle($0) }) else { fputs("claude-buddy: cannot bind socket\n", stderr); exit(1) }
+    guard server.start({ controller.handle($0) }) else { fputs("glade: cannot bind socket\n", stderr); exit(1) }
     signal(SIGPIPE, SIG_IGN)
     app.run()
 }
@@ -79,7 +86,7 @@ case "test":
         else if args[i] == "--age", i + 1 < args.count { age = args[i + 1]; i += 1 }
         i += 1
     }
-    guard ensureDaemon() else { print("could not start ClaudeBuddy.app"); exit(1) }
+    guard ensureDaemon() else { print("could not start Glade.app"); exit(1) }
     let msg = kind == "done" ? "" : "Claude needs your permission to use Bash"
     var json: [String: Any] = ["session_id": "test", "cwd": FileManager.default.currentDirectoryPath]
     if !msg.isEmpty { json["message"] = msg }
@@ -91,7 +98,7 @@ case "snooze":
     if a == "forever" { c.snoozeUntil = Date.distantFuture.timeIntervalSince1970 }
     else if a == "clear" || a == "off" { c.snoozeUntil = 0 }
     else if let m = Double(a) { c.snoozeUntil = Date().timeIntervalSince1970 + m * 60 }
-    else { print("usage: claude-buddy snooze MINUTES|forever|clear"); exit(1) }
+    else { print("usage: glade snooze MINUTES|forever|clear"); exit(1) }
     c.save()
     _ = sendEvent("Hide")
     print(c.snoozeUntil > 0 ? "snoozed" : "snooze cleared")

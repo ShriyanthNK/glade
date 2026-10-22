@@ -1,27 +1,31 @@
 import Foundation
 
-let supportDir = NSHomeDirectory() + "/.claude-buddy"
-let socketPath = supportDir + "/buddy.sock"
+/// GLADE_HOME / GLADE_LEGACY_HOME override the locations (used by tests so they never touch the real install).
+public let supportDir = ProcessInfo.processInfo.environment["GLADE_HOME"] ?? NSHomeDirectory() + "/.glade"
+public let legacySupportDir = ProcessInfo.processInfo.environment["GLADE_LEGACY_HOME"] ?? NSHomeDirectory() + "/.claude-buddy"
+public let socketPath = supportDir + "/glade.sock"
 
-struct Message {
-    var event = ""
-    var bundle = ""
-    var flags: [String: String] = [:]
-    var session: String?
-    var cwd: String?
-    var text: String?
+public struct Message {
+    public var event = ""
+    public var bundle = ""
+    public var flags: [String: String] = [:]
+    public var session: String?
+    public var cwd: String?
+    public var text: String?
+    public init() {}
 }
 
-struct Config {
-    var chime = false
-    var waitDelay = 5.0
-    var doneDelay = 20.0
-    var giveUpAfter = 180.0      // seconds before Mochi leaves on his own; 0 = never
-    var snoozeUntil = 0.0        // epoch seconds
+public struct Config: Equatable {
+    public var chime = false
+    public var waitDelay = 5.0
+    public var doneDelay = 20.0
+    public var giveUpAfter = 180.0      // seconds before Mochi leaves on his own; 0 = never
+    public var snoozeUntil = 0.0        // epoch seconds
+    public init() {}
 
-    static var path: String { supportDir + "/config.json" }
+    public static var path: String { supportDir + "/config.json" }
 
-    static func load() -> Config {
+    public static func load(from path: String = Config.path) -> Config {
         var c = Config()
         guard let d = FileManager.default.contents(atPath: path),
               let j = try? JSONSerialization.jsonObject(with: d) as? [String: Any] else { return c }
@@ -33,18 +37,30 @@ struct Config {
         return c
     }
 
-    func save() {
+    public func save(to path: String = Config.path) {
         let j: [String: Any] = ["chime": chime, "waitDelay": waitDelay, "doneDelay": doneDelay,
                                 "giveUpAfter": giveUpAfter, "snoozeUntil": snoozeUntil]
-        try? FileManager.default.createDirectory(atPath: supportDir, withIntermediateDirectories: true)
+        let dir = (path as NSString).deletingLastPathComponent
+        try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         if let d = try? JSONSerialization.data(withJSONObject: j, options: [.prettyPrinted, .sortedKeys]) {
-            try? d.write(to: URL(fileURLWithPath: Config.path))
+            try? d.write(to: URL(fileURLWithPath: path))
         }
+    }
+
+    /// Copies a claude-buddy config into the Glade support dir the first time Glade runs.
+    /// Returns true when a copy was made. Never overwrites an existing Glade config.
+    @discardableResult
+    public static func migrateLegacy(from legacyPath: String = legacySupportDir + "/config.json",
+                                     to newPath: String = Config.path) -> Bool {
+        let fm = FileManager.default
+        guard !fm.fileExists(atPath: newPath), fm.fileExists(atPath: legacyPath) else { return false }
+        Config.load(from: legacyPath).save(to: newPath)
+        return true
     }
 }
 
 /// Wire format: event \n bundle-id \n k=v flags \n one-line JSON \n
-func parseMessage(_ raw: String) -> Message {
+public func parseMessage(_ raw: String) -> Message {
     let lines = raw.split(separator: "\n", maxSplits: 3, omittingEmptySubsequences: false).map(String.init)
     var m = Message()
     m.event = lines.count > 0 ? lines[0].trimmingCharacters(in: .whitespaces) : ""
@@ -87,23 +103,24 @@ private func connectSocket() -> Int32? {
     return fd
 }
 
-func daemonRunning() -> Bool {
+public func daemonRunning() -> Bool {
     guard let fd = connectSocket() else { return false }
     close(fd)
     return true
 }
 
-func sendRaw(_ text: String) -> Bool {
+public func sendRaw(_ text: String) -> Bool {
     guard let fd = connectSocket() else { return false }
     defer { close(fd) }
     let bytes = Array(text.utf8)
     return write(fd, bytes, bytes.count) == bytes.count
 }
 
-final class Server {
+public final class Server {
     var fd: Int32 = -1
+    public init() {}
 
-    func start(_ handler: @escaping (Message) -> Void) -> Bool {
+    public func start(_ handler: @escaping (Message) -> Void) -> Bool {
         try? FileManager.default.createDirectory(atPath: supportDir, withIntermediateDirectories: true)
         unlink(socketPath)
         fd = socket(AF_UNIX, SOCK_STREAM, 0)
@@ -138,5 +155,5 @@ final class Server {
         return true
     }
 
-    func stop() { close(fd); unlink(socketPath) }
+    public func stop() { close(fd); unlink(socketPath) }
 }

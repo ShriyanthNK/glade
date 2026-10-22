@@ -1,20 +1,23 @@
 #!/bin/bash
-# Removes claude-buddy hooks from ~/.claude/settings.json and deletes everything it installed.
+# Removes Glade's hooks from ~/.claude/settings.json and deletes everything it installed.
 set -euo pipefail
-DEST="$HOME/.claude-buddy"
+DEST="$HOME/.glade"
+OLD="$HOME/.claude-buddy"
 SETTINGS="$HOME/.claude/settings.json"
-MARK="/.claude-buddy/hook.sh"
+MARK="/.glade/hook.sh"
+OLD_MARK="/.claude-buddy/hook.sh"
 
-[ -x "$DEST/bin/claude-buddy" ] && "$DEST/bin/claude-buddy" quit 2>/dev/null || true
+[ -x "$DEST/bin/glade" ] && "$DEST/bin/glade" quit 2>/dev/null || true
+pkill -x glade 2>/dev/null || true
 pkill -x claude-buddy 2>/dev/null || true
 
-if [ -f "$SETTINGS" ] && command -v jq >/dev/null && jq -e --arg mark "$MARK" '.. | strings | select(contains($mark))' "$SETTINGS" >/dev/null 2>&1; then
-  BACKUP="$SETTINGS.claude-buddy-backup.$(date +%Y%m%d-%H%M%S)"
+if [ -f "$SETTINGS" ] && command -v jq >/dev/null && jq -e --arg mark "$MARK" --arg old "$OLD_MARK" '.. | strings | select(contains($mark) or contains($old))' "$SETTINGS" >/dev/null 2>&1; then
+  BACKUP="$SETTINGS.glade-backup.$(date +%Y%m%d-%H%M%S)"
   cp "$SETTINGS" "$BACKUP"
   echo "backup: $BACKUP"
   TMP=$(mktemp)
-  jq --arg mark "$MARK" '
-    def ours: ([.hooks[]?.command // ""] | any(contains($mark)));
+  jq --arg mark "$MARK" --arg old "$OLD_MARK" '
+    def ours: ([.hooks[]?.command // ""] | any(contains($mark) or contains($old)));
     if .hooks then
       .hooks |= (with_entries(.value |= map(select(ours | not))) | with_entries(select(.value | length > 0)))
       | if (.hooks | length) == 0 then del(.hooks) else . end
@@ -23,6 +26,8 @@ if [ -f "$SETTINGS" ] && command -v jq >/dev/null && jq -e --arg mark "$MARK" '.
   echo "hooks removed from $SETTINGS"
 fi
 
-[ -L "$HOME/.local/bin/claude-buddy" ] && rm -f "$HOME/.local/bin/claude-buddy"
-rm -rf "$DEST"
-echo "claude-buddy uninstalled."
+for l in "$HOME/.local/bin/glade" "$HOME/.local/bin/claude-buddy"; do
+  [ -L "$l" ] && rm -f "$l"
+done
+rm -rf "$DEST" "$OLD"
+echo "glade uninstalled."

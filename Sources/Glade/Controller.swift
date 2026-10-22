@@ -1,3 +1,4 @@
+import GladeCore
 import AppKit
 import SwiftUI
 
