@@ -4,8 +4,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+REAL_SETTINGS="$(eval echo ~)/.claude/settings.json"   # captured before HOME is overridden
 TH=$(mktemp -d)                       # short path: unix socket paths are limited to ~100 chars
-export HOME="$TH" GLADE_HOME="$TH/.glade" GLADE_LEGACY_HOME="$TH/.claude-buddy"
+export HOME="$TH" GLADE_HOME="$TH/.glade" GLADE_LEGACY_HOME="$TH/.claude-buddy" GLADE_CLAUDE_SETTINGS="$TH/.claude/settings.json"
+REAL_SUM_BEFORE=$(shasum "$REAL_SETTINGS" 2>/dev/null || echo none)
 cleanup() { "$TH/.glade/bin/glade" quit >/dev/null 2>&1 || true; sleep 0.5; rm -rf "$TH"; }
 trap cleanup EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -33,6 +35,7 @@ for ev in Notification Stop UserPromptSubmit PostToolUse; do
   jq -e --arg ev "$ev" '[.hooks[$ev][].hooks[].command] | any(endswith("/.glade/hook.sh " + $ev))' "$S" >/dev/null || fail "hook $ev missing"
 done
 ok "four hooks installed"
+[ "$("$GLADE_HOME/bin/glade" hooks status)" = "installed" ] || fail "hooks status did not report installed"
 jq -e '[.hooks.Stop[].hooks[].command] | any(contains("/.claude-buddy/"))' "$S" >/dev/null && fail "old hook still present"
 ok "old claude-buddy hook replaced"
 jq -e '[.hooks.Stop[].hooks[].command] | any(. == "/usr/local/bin/other-hook Stop")' "$S" >/dev/null || fail "unrelated Stop hook lost"
@@ -64,4 +67,6 @@ ok "snapshot renders"
 diff <(jq -S 'del(.hooks.Stop[0])' "$TH/before.json") <(jq -S . "$S") >/dev/null || fail "uninstall did not restore settings"
 [ ! -d "$GLADE_HOME" ] || fail "~/.glade not removed"
 ok "uninstall restores settings and removes files"
+[ "$(shasum "$REAL_SETTINGS" 2>/dev/null || echo none)" = "$REAL_SUM_BEFORE" ] || fail "the real ~/.claude/settings.json changed"
+ok "real ~/.claude/settings.json untouched"
 echo "ALL PASSED"

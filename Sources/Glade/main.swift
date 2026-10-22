@@ -8,6 +8,8 @@ func usage() {
 
       glade test [wait|done] [--age SECONDS]   show the buddy right now
       glade snooze MINUTES|forever|clear      silence the buddy
+      glade settings [alerts|claude-code|general]     open the settings window
+      glade hooks install|uninstall|status            manage the Claude Code hooks
       glade hide                               hide it
       glade chime on|off                       toggle the soft chime
       glade delays WAIT DONE                   set delays in seconds (default 5 20)
@@ -61,6 +63,8 @@ func sendEvent(_ event: String, flags: String = "", json: [String: Any] = [:]) -
     print("wrote \(path)")
 }
 
+let statusItem = StatusItemController()
+
 func runDaemon() {
     if daemonRunning() { exit(0) }   // single instance
     Config.migrateLegacy()
@@ -68,6 +72,7 @@ func runDaemon() {
     app.setActivationPolicy(.accessory)
     let controller = BuddyController()
     controller.start()
+    statusItem.start()
     let server = Server()
     guard server.start({ controller.handle($0) }) else { fputs("glade: cannot bind socket\n", stderr); exit(1) }
     signal(SIGPIPE, SIG_IGN)
@@ -93,15 +98,31 @@ case "test":
     _ = sendEvent("Test", flags: "kind=\(kind == "done" ? "done" : "wait") age=\(age)", json: json)
     print("buddy sent (\(kind))")
 case "snooze":
-    var c = Config.load()
-    let a = args.count > 1 ? args[1] : ""
-    if a == "forever" { c.snoozeUntil = Date.distantFuture.timeIntervalSince1970 }
-    else if a == "clear" || a == "off" { c.snoozeUntil = 0 }
-    else if let m = Double(a) { c.snoozeUntil = Date().timeIntervalSince1970 + m * 60 }
-    else { print("usage: glade snooze MINUTES|forever|clear"); exit(1) }
-    c.save()
-    _ = sendEvent("Hide")
+    guard let c = applySnooze(args.count > 1 ? args[1] : "") else { print("usage: glade snooze MINUTES|forever|clear"); exit(1) }
     print(c.snoozeUntil > 0 ? "snoozed" : "snooze cleared")
+case "settings":
+    guard ensureDaemon() else { print("could not start Glade.app"); exit(1) }
+    _ = sendEvent("Settings", flags: args.count > 1 ? "tab=\(args[1])" : "")
+case "hooks":
+    let installer = HookInstaller()
+    do {
+        switch args.count > 1 ? args[1] : "status" {
+        case "install":
+            let b = try installer.install()
+            print("hooks installed" + (b.map { " (backup: \($0))" } ?? ""))
+        case "uninstall":
+            let b = try installer.uninstall()
+            print(b.map { "hooks removed (backup: \($0))" } ?? "no Glade hooks found")
+        case "status":
+            switch installer.status() {
+            case .installed: print("installed")
+            case .notInstalled: print("not installed")
+            case .partial(let m): print("partial, missing: " + m.joined(separator: ", "))
+            case .unreadable: print("settings.json is not valid JSON"); exit(1)
+            }
+        default: print("usage: glade hooks install|uninstall|status"); exit(1)
+        }
+    } catch { print("\(error)"); exit(1) }
 case "hide": _ = sendEvent("Hide")
 case "quit": _ = sendEvent("Quit")
 case "chime":

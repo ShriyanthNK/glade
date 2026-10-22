@@ -1,17 +1,12 @@
 #!/bin/bash
-# Builds Glade, installs it to ~/.glade, and merges hooks into ~/.claude/settings.json.
+# Builds Glade, installs it to ~/.glade, and adds its hooks to ~/.claude/settings.json.
 # Also migrates an existing claude-buddy install (config copied, old hooks replaced, old app removed).
 set -euo pipefail
 cd "$(dirname "$0")"
 
-DEST="$HOME/.glade"
+DEST="${GLADE_HOME:-$HOME/.glade}"
 APP="$DEST/Glade.app"
-OLD="$HOME/.claude-buddy"
-SETTINGS="$HOME/.claude/settings.json"
-MARK="/.glade/hook.sh"
-OLD_MARK="/.claude-buddy/hook.sh"
-
-command -v jq >/dev/null || { echo "jq is required (brew install jq)"; exit 1; }
+OLD="${GLADE_LEGACY_HOME:-$HOME/.claude-buddy}"
 
 echo "==> building"
 BUILT="$(scripts/bundle.sh build)"
@@ -31,35 +26,21 @@ if [ -f "$OLD/config.json" ] && [ ! -f "$DEST/config.json" ]; then
 fi
 rm -rf "$APP"
 cp -R "$BUILT" "$APP"
-cp scripts/hook.sh "$DEST/hook.sh" && chmod +x "$DEST/hook.sh"
 ln -sf "$APP/Contents/MacOS/glade" "$DEST/bin/glade"
 ln -sf "$APP/Contents/MacOS/glade" "$HOME/.local/bin/glade"
 # old scripts that call `claude-buddy` keep working
 ln -sf "$APP/Contents/MacOS/glade" "$HOME/.local/bin/claude-buddy"
 
-echo "==> merging hooks into $SETTINGS"
-mkdir -p "$(dirname "$SETTINGS")"
-[ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
-jq empty "$SETTINGS" 2>/dev/null || { echo "$SETTINGS is not valid JSON; fix it first"; exit 1; }
-BACKUP="$SETTINGS.glade-backup.$(date +%Y%m%d-%H%M%S)"
-cp "$SETTINGS" "$BACKUP"
-echo "    backup: $BACKUP"
-TMP=$(mktemp)
-jq --arg h "$DEST/hook.sh" --arg mark "$MARK" --arg old "$OLD_MARK" '
-  def ours: ([.hooks[]?.command // ""] | any(contains($mark) or contains($old)));
-  def add($ev): .hooks[$ev] = (((.hooks[$ev] // []) | map(select(ours | not)))
-                 + [{hooks: [{type: "command", command: ($h + " " + $ev), timeout: 5}]}]);
-  .hooks //= {}
-  | add("Notification") | add("Stop") | add("UserPromptSubmit") | add("PostToolUse")
-' "$SETTINGS" > "$TMP" && mv "$TMP" "$SETTINGS"
+echo "==> adding hooks (this also replaces any claude-buddy hooks)"
+"$DEST/bin/glade" hooks install
 
-# old install is fully replaced now: hooks swapped above, config copied, app stopped
+# the old install is fully replaced now: hooks swapped, config copied, app stopped
 if [ -d "$OLD" ]; then
   rm -rf "$OLD"
   echo "==> removed old install at $OLD"
 fi
 
 echo
-echo "Installed. Try it:  $DEST/bin/glade test"
+echo "Installed. Try it:  $DEST/bin/glade test      Settings:  $DEST/bin/glade settings"
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "(add ~/.local/bin to PATH to use plain 'glade')" ;; esac
 echo "Restart running Claude Code sessions so they pick up the hooks."
