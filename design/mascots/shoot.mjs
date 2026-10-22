@@ -1,5 +1,7 @@
 import { createRequire } from 'node:module';
-const { chromium } = createRequire('/Users/shriyanthnandakumar/glade-site/package.json')('playwright');
+// Playwright is not a dependency of this repo: use the one in the sibling glade-site checkout (or $PLAYWRIGHT_FROM = a package.json path).
+const from = process.env.PLAYWRIGHT_FROM || new URL('../../../glade-site/package.json', import.meta.url).pathname;
+const { chromium } = createRequire(from)('playwright');
 const [,, out, t = '0.9', w = '1280'] = process.argv;
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: +w, height: 900 }, deviceScaleFactor: 1 });
