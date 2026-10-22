@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Buddy: Mochi for Claude Code</title>
+<meta name="description" content="Mochi is a tiny pixel-art friend who pops up in the corner of your Mac when Claude Code is waiting on you. Free and open source.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='5' width='10' height='9' fill='%23ffd9b8' stroke='%233d2236' stroke-width='1.5'/%3E%3Crect x='7' y='1' width='3' height='4' fill='%2362c46d'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+/* layout: left-aligned copy + live "desktop" stage in the hero; quiet definition list; pose strip; install */
+:root{
+  --bg:#e9efff; --panel:#ffffff; --ink:#2a1830; --mut:#5a4660; --line:#2a1830;
+  --btn:#177a70; --on-btn:#ffffff; --peach:#ffd9b8; --soft:#dbe4fb;
+  --wall1:#bfd4ff; --wall2:#ffd9c7; --term:#2a1830; --term-ink:#f4ecff; --term-dim:#a899b3;
+  --display:'Pixelify Sans',ui-monospace,monospace; --body:'Instrument Sans',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#16152b; --panel:#211f40; --ink:#f4ecff; --mut:#b7aecb; --line:#f4ecff;
+  --btn:#3fd0c0; --on-btn:#16152b; --soft:#24224a; --wall1:#33396e; --wall2:#5a3a5e; --term:#0f0e1f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16152b; --panel:#211f40; --ink:#f4ecff; --mut:#b7aecb; --line:#f4ecff;
+  --btn:#3fd0c0; --on-btn:#16152b; --soft:#24224a; --wall1:#33396e; --wall2:#5a3a5e; --term:#0f0e1f; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--btn);outline-offset:3px}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:max(20px,env(safe-area-inset-left))}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.08;margin:0;text-wrap:balance;letter-spacing:.005em}
+h1{font-size:clamp(2.1rem,4vw,3.3rem);line-height:1.12}
+h2{font-size:clamp(1.8rem,3.4vw,2.5rem)}
+h3{font-size:1.25rem}
+p{margin:0;max-width:62ch}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;padding-block:22px}
+.brand{font:700 1.2rem var(--display);text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand i{width:18px;height:18px;background:var(--peach);border:3px solid var(--line);display:block;position:relative}
+.brand i::before{content:"";position:absolute;left:4px;top:-9px;width:5px;height:6px;background:#62c46d;border:2px solid var(--line)}
+.top a.gh{font-weight:600;text-decoration:none;border-bottom:3px solid var(--line)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,5.5fr) minmax(0,6.5fr);gap:clamp(28px,4vw,56px);align-items:center;padding-block:clamp(24px,5vw,56px) clamp(48px,7vw,96px)}
+.hero p.lede{font-size:1.2rem;margin-top:22px}
+.cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:30px}
+.btn{font:600 1rem var(--body);display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border:3px solid var(--line);background:var(--btn);color:var(--on-btn);box-shadow:5px 5px 0 var(--line);cursor:pointer;text-decoration:none;transition:transform .08s,box-shadow .08s}
+.btn:hover{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--line)}
+.btn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--line)}
+.btn.alt{background:var(--panel);color:var(--ink)}
+.btn code{font:600 .88rem var(--mono)}
+.fine{margin-top:18px;font-size:.95rem;color:var(--mut)}
+
+/* stage: a tiny desktop */
+.stage{position:relative;aspect-ratio:7/6;min-height:340px;overflow:hidden;border:3px solid var(--line);box-shadow:8px 8px 0 var(--line);background:linear-gradient(135deg,var(--wall1),var(--wall2))}
+.menubar{position:absolute;inset:0 0 auto 0;height:26px;background:color-mix(in srgb,var(--panel) 75%,transparent);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font:600 12px var(--body);color:var(--ink)}
+.term{position:absolute;left:5%;top:13%;width:62%;background:var(--term);color:var(--term-ink);border:3px solid var(--line);font:400 clamp(10.5px,1.35vw,13px)/1.65 var(--mono)}
+.term .bar{height:22px;border-bottom:3px solid var(--line);display:flex;align-items:center;gap:6px;padding-left:8px;background:#443050}
+.term .bar b{width:9px;height:9px;background:#ff8fa3;display:block}.term .bar b:nth-child(2){background:#ffd23f}.term .bar b:nth-child(3){background:#62c46d}
+.term .bar span{margin-left:8px;color:var(--term-dim);font-size:11px}
+.term pre{margin:0;padding:12px 14px 14px;font:inherit;white-space:pre-wrap}
+.dim{color:var(--term-dim)}.ok{color:#62c46d}.ask{color:#ffd23f}
+.caret{display:inline-block;width:.6em;height:1.1em;background:var(--term-ink);vertical-align:-.2em;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.mochi{position:absolute;right:3%;bottom:0;pointer-events:none;filter:drop-shadow(0 0 .6px rgba(255,255,255,.7)) drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.bubble{position:absolute;right:calc(3% + 4px);width:min(262px,62%);transform-origin:calc(100% - 96px) 100%;pointer-events:none}
+.bubble .shell{background:#3d2236;clip-path:polygon(0 4px,4px 4px,4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px));padding:3px;transform:translate(0,0)}
+.bubble .face{background:#fff6dc;color:#3d2236;padding:10px 12px 11px;clip-path:polygon(0 3px,3px 3px,3px 0,calc(100% - 3px) 0,calc(100% - 3px) 3px,100% 3px,100% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(100% - 3px) 100%,3px 100%,3px calc(100% - 3px),0 calc(100% - 3px));font:700 12px/1.35 var(--mono);min-height:62px}
+.bubble .msg{font-weight:400;font-size:11px;margin-top:5px;opacity:.85;min-height:1.35em}
+.bubble .chip{display:inline-block;margin-top:6px;background:#2fa89b;color:#fff;padding:1px 6px;font-size:10px;font-weight:700}
+.bubble .tail{position:absolute;right:84px;bottom:-12px;width:24px;height:12px;background:
+  linear-gradient(#3d2236,#3d2236) 0 0/24px 4px no-repeat,
+  linear-gradient(#3d2236,#3d2236) 4px 4px/16px 4px no-repeat,
+  linear-gradient(#3d2236,#3d2236) 8px 8px/8px 4px no-repeat}
+.clock{position:absolute;left:5%;bottom:14px;font:700 13px var(--mono);background:var(--panel);border:3px solid var(--line);padding:3px 9px;color:var(--ink)}
+.caption{margin-top:18px;font-size:.98rem;color:var(--mut);min-height:3em}
+.caption strong{color:var(--ink)}
+
+/* sections */
+section{padding-block:clamp(44px,7vw,88px)}
+.rule{border-top:3px solid var(--line)}
+.split{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:clamp(24px,5vw,64px)}
+.split h2{position:sticky;top:24px;align-self:start}
+dl{margin:0;display:grid;gap:0}
+dl div{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding-block:20px;border-bottom:2px dashed color-mix(in srgb,var(--line) 35%,transparent)}
+dl div:first-child{padding-top:0}
+dt{font:700 1.15rem var(--display)}
+dd{margin:0;color:var(--mut)}
+
+.poses{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:36px}
+.pose figure{margin:0}
+.pose .pad{background:var(--soft);border:3px solid var(--line);display:flex;justify-content:center;align-items:flex-end;aspect-ratio:1;overflow:hidden}
+.pose canvas{width:100%;height:auto;display:block;filter:drop-shadow(0 0 .6px rgba(255,255,255,.7)) drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.pose h3{margin-top:14px}
+.pose p{color:var(--mut);font-size:.97rem;margin-top:4px}
+
+.install{background:var(--term);color:var(--term-ink);border:3px solid var(--line);box-shadow:6px 6px 0 var(--line);margin-top:30px;position:relative}
+.install pre{margin:0;padding:20px 22px;overflow-x:auto;font:400 .95rem/1.8 var(--mono)}
+.install .copy{position:absolute;right:12px;top:12px;padding:7px 12px;font-size:.85rem;box-shadow:3px 3px 0 var(--line)}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:40px}
+.steps h3{margin-bottom:6px}.steps p{color:var(--mut);font-size:.98rem}
+.faq details{border-bottom:2px dashed color-mix(in srgb,var(--line) 35%,transparent);padding-block:16px}
+.faq summary{font:700 1.1rem var(--display);cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:var(--mono)}
+.faq details[open] summary::after{content:"-"}
+.faq details p{margin-top:10px;color:var(--mut)}
+.faq code,.steps code,dd code{font:500 .9em var(--mono);background:var(--soft);padding:1px 6px}
+footer{padding-block:40px 56px;color:var(--mut);font-size:.95rem;display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
+
+@media (max-width:860px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .split{grid-template-columns:minmax(0,1fr)}.split h2{position:static}
+  .poses{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .steps{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:420px){.term{width:80%}.install .copy{position:static;margin:0 0 14px 22px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.caret{animation:none}.btn{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#top"><i></i>claude-buddy</a>
+    <a class="gh" href="https://github.com/ShriyanthNK/claude-buddy">GitHub</a>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div>
+        <h1>A small friend for when Claude is waiting on you</h1>
+        <p class="lede">Claude Code asks for permission, or finishes a long task, and you're in another window. Mochi pops up in the corner of the screen you're using. Reply and he hops away.</p>
+        <div class="cta">
+          <a class="btn" href="#install">Install Mochi</a>
+          <a class="btn alt" href="https://github.com/ShriyanthNK/claude-buddy">View source</a>
+        </div>
+        <p class="fine">Free and open source. macOS 13 or later. Nothing leaves your Mac.</p>
+      </div>
+      <div>
+        <div class="stage" id="stage" role="img" aria-label="Animated demo: Claude Code asks for permission, five seconds later Mochi pops up in the screen corner, gets impatient, and leaves when you reply.">
+          <div class="menubar"><span>Terminal</span><span id="mbclock">9:41</span></div>
+          <div class="term">
+            <div class="bar"><b></b><b></b><b></b><span>demo-app</span></div>
+<pre id="termtext"></pre>
+          </div>
+          <div class="clock" id="clock">0:00</div>
+          <div class="bubble" id="bubble" hidden>
+            <div class="shell"><div class="face"><div id="btitle"></div><div class="msg" id="bmsg"></div><span class="chip">&gt; demo-app</span></div></div>
+            <div class="tail"></div>
+          </div>
+          <canvas class="mochi" id="hero" aria-hidden="true"></canvas>
+        </div>
+        <p class="caption" id="caption" aria-live="off"></p>
+      </div>
+    </div>
+
+    <section class="rule">
+      <div class="split">
+        <h2>He only shows up when it matters</h2>
+        <dl>
+          <div><dt>Waits before bothering you</dt><dd>Five seconds after a permission prompt or a finished task. If you reply first, he never appears. Both delays are adjustable.</dd></div>
+          <div><dt>Gets impatient</dt><dd>Taps his foot at first, holds up a ? sign after a minute and a !! sign after two. After three he gives up and leaves.</dd></div>
+          <div><dt>Follows you across monitors</dt><dd>He shows up on whichever screen your mouse is on, above full-screen apps, on every Space.</dd></div>
+          <div><dt>Never steals focus</dt><dd>You can click straight through everything except Mochi and his bubble. Click him to jump to your terminal, VS Code, iTerm or Ghostty.</dd></div>
+          <div><dt>Easy to silence</dt><dd><code>claude-buddy snooze 30</code> mutes him for half an hour. The x on the bubble dismisses just this one.</dd></div>
+          <div><dt>Stays on your machine</dt><dd>Claude Code hooks hand events to a small app over a local socket. No network, no accounts, no telemetry.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="rule">
+      <h2>Four moods, all drawn by hand in code</h2>
+      <p style="margin-top:14px;color:var(--mut)">Every frame is generated from a 32 by 32 pixel grid. These are running live.</p>
+      <div class="poses">
+        <div class="pose"><figure><div class="pad"><canvas data-pose="0"></canvas></div><figcaption><h3>Calm</h3><p>Breathes, blinks, looks around, taps a foot, waves now and then.</p></figcaption></figure></div>
+        <div class="pose"><figure><div class="pad"><canvas data-pose="1"></canvas></div><figcaption><h3>One minute in</h3><p>Holds up a ? sign and stops pretending he's fine.</p></figcaption></figure></div>
+        <div class="pose"><figure><div class="pad"><canvas data-pose="2"></canvas></div><figcaption><h3>Two minutes in</h3><p>Brows down, steam up, sign says !!.</p></figcaption></figure></div>
+        <div class="pose"><figure><div class="pad"><canvas data-pose="3"></canvas></div><figcaption><h3>Claude's done</h3><p>Confetti, hops, a big smile. Your turn.</p></figcaption></figure></div>
+      </div>
+    </section>
+
+    <section class="rule" id="install">
+      <div class="split">
+        <h2>Install in a minute</h2>
+        <div>
+          <p>You need macOS 13 or later, <code>jq</code>, and a Swift toolchain (Xcode or the Command Line Tools). The installer builds the app, adds four hooks to <code>~/.claude/settings.json</code>, and backs that file up first.</p>
+          <div class="install">
+            <button class="btn copy" id="copy" type="button">Copy</button>
+<pre id="cmd">git clone https://github.com/ShriyanthNK/claude-buddy.git
+cd claude-buddy
+./install.sh
+claude-buddy test</pre>
+          </div>
+          <div class="steps">
+            <div><h3>Build</h3><p>The script compiles the app into <code>~/.claude-buddy</code>. No Dock icon, no login item.</p></div>
+            <div><h3>Hook</h3><p>It merges its hooks with your existing settings. Anything already there stays.</p></div>
+            <div><h3>Say hi</h3><p><code>claude-buddy test</code> shows Mochi right away. Restart Claude Code sessions to pick up the hooks.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="rule faq">
+      <div class="split">
+        <h2>Questions</h2>
+        <div>
+          <details><summary>How do I remove it?</summary><p>Run <code>./uninstall.sh</code>. It takes out only its own hooks, deletes the app, and leaves a backup of your settings.</p></details>
+          <details><summary>What if I don't want him on screen for a while?</summary><p><code>claude-buddy snooze 30</code> for thirty minutes, <code>snooze forever</code> for good, <code>snooze clear</code> to bring him back.</p></details>
+          <details><summary>Can I change the delays or turn on a chime?</summary><p><code>claude-buddy delays 5 5</code> sets the waiting and done delays in seconds. <code>claude-buddy chime on</code> adds a soft sound.</p></details>
+          <details><summary>Does it work with several Claude Code sessions?</summary><p>Yes. Events are matched by session, so replying in one terminal doesn't hide the buddy for another.</p></details>
+          <details><summary>Is Mochi Claude's mascot?</summary><p>No. He's an original character and this is an independent open source project, not an Anthropic product.</p></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>MIT licensed. Made for people who tab away from Claude Code.</span>
+    <a href="https://github.com/ShriyanthNK/claude-buddy">github.com/ShriyanthNK/claude-buddy</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PAL=[null,'#3d2236','#ffd9b8','#f0a487','#fff3e4','#ff8fa3','#62c46d','#2f8f4e','#ffffff','#fff6dc','#b8794a','#6ec6ff','#ff4d5e','#ffd23f','#ff7eb6','#3fd0c0','#b03a52'];
+const P={ink:1,body:2,shade:3,hi:4,cheek:5,leaf:6,leafD:7,white:8,paper:9,wood:10,sweat:11,red:12,gold:13,pink:14,teal:15,mouth:16};
+const fmod=(a,b)=>((a%b)+b)%b;
+
+class Sprite{
+  constructor(){this.px=new Uint8Array(1024)}
+  get(x,y){return(x<0||x>31||y<0||y>31)?0:this.px[y*32+x]}
+  set(x,y,c){if(x<0||x>31||y<0||y>31)return;this.px[y*32+x]=c}
+  rect(x,y,w,h,c){for(let j=0;j<h;j++)for(let i=0;i<w;i++)this.set(x+i,y+j,c)}
+  ellipse(cx,cy,rx,ry,c,maxY){for(let y=0;y<=maxY;y++)for(let x=0;x<32;x++){const dx=(x+.5-cx)/rx,dy=(y+.5-cy)/ry;if(dx*dx+dy*dy<=1)this.set(x,y,c)}}
+  shade(cx,cy,rx,ry){for(let y=0;y<32;y++)for(let x=0;x<32;x++)if(this.get(x,y)===P.body){const dx=(x+.5-cx)/rx,dy=(y+.5-cy)/ry;if(dx*.6+dy*.8>.6)this.set(x,y,P.shade)}}
+  outline(c){const add=[];for(let y=0;y<32;y++)for(let x=0;x<32;x++)if(!this.get(x,y)&&(this.get(x+1,y)||this.get(x-1,y)||this.get(x,y+1)||this.get(x,y-1)))add.push([x,y]);add.forEach(([x,y])=>this.set(x,y,c))}
+  glyph(ch,x,y,c){const rows=ch==='!'?['010','010','010','000','010']:['110','001','010','000','010'];rows.forEach((r,j)=>[...r].forEach((b,i)=>{if(b==='1')this.set(x+i,y+j,c)}))}
+  plus(x,y,c){this.set(x,y,c);this.set(x-1,y,c);this.set(x+1,y,c);this.set(x,y-1,c);this.set(x,y+1,c)}
+}
+
+function bodyMotion(p){
+  const t=p.t;
+  if(p.mood==='done'){
+    const ph=fmod(t,1.3)/1.3;
+    if(ph<.5){const u=Math.sin(Math.PI*ph/.5);return{dy:-u*5,sx:1-.05*u,sy:1+.07*u,shake:0}}
+    if(ph<.62){const u=Math.sin(Math.PI*(ph-.5)/.12);return{dy:0,sx:1+.08*u,sy:1-.1*u,shake:0}}
+    return{dy:0,sx:1,sy:1,shake:0};
+  }
+  if(p.tier===2){const hop=fmod(t,1.6);return{dy:hop<.3?-Math.sin(Math.PI*hop/.3)*2:0,sx:1,sy:1,shake:Math.floor(t*16)%2===0?0:1}}
+  return{dy:0,sx:1,sy:1,shake:0};
+}
+
+function makeSprite(p){
+  const s=new Sprite(),t=p.t,waiting=p.mood==='waiting',tier=waiting?p.tier:0;
+  const rate=waiting?(tier===2?3.6:2.0):3.2;
+  const br=Math.sin(t*rate)>0?1:0, ry=9+(br?.9:0), cy=30-ry;
+  s.ellipse(16,cy,11,ry,P.body,29); s.shade(16,cy,11,ry);
+  const topY=Math.round(cy-ry);
+  const sway=Math.sin(t*1.6)>.55?1:0, perk=p.mood==='done'?Math.floor(t*6)%2:0;
+  s.rect(16,topY-4,2,4,P.leafD); s.rect(13+sway-perk,topY-4-perk,3,2,P.leaf); s.rect(18+sway+perk,topY-5-perk,3,2,P.leaf);
+  let tapDown=false,tapping=false;
+  if(waiting){
+    if(tier===0){tapping=fmod(t,4)<1.3;if(tapping)tapDown=Math.floor(t*4)%2===0}
+    else if(tier===1){tapping=true;tapDown=Math.floor(t*6)%2===0}
+    else{tapping=true;tapDown=Math.floor(t*8)%2===0}
+  }
+  s.rect(10,30,4,2,P.shade); s.rect(18,tapping&&!tapDown?29:30,4,2,P.shade);
+  const armDown=x=>s.rect(x,21,2,4,P.shade);
+  const sign=waiting?(tier===1?'?':tier===2?'!!':null):null;
+  if(p.mood==='done'){const b=Math.floor(t*6)%2;s.rect(3,13+b,2,7,P.shade);s.rect(27,14-b,2,7,P.shade)}
+  else if(sign){armDown(3);s.rect(27,16,2,5,P.shade);s.rect(26,9,2,8,P.wood);s.rect(21,0,10,9,P.wood);s.rect(22,1,8,7,P.paper)}
+  else{armDown(3);if(fmod(t+2,7.5)<1.8){s.rect(27+(Math.floor(t*8)%2),12,2,8,P.shade)}else armDown(27)}
+  s.outline(P.ink);
+  for(const [hx,hy] of [[9,4],[9,3],[10,2],[11,1],[12,1],[9,6]])s.set(hx,topY+hy,P.hi);
+  if(sign){const col=tier===2?P.red:P.ink;if(sign.length===1)s.glyph(sign,25,2,col);else{s.glyph('!',23,2,col);s.glyph('!',27,2,col)}}
+  const by=19-br, blinking=fmod(t+.7,3.7)>3.55;
+  let look=p.look||0;
+  if(look===0){const c=fmod(t,9);if(c>4&&c<5)look=-1;else if(c>5.6&&c<6.6)look=1}
+  if(p.mood==='done'){for(const x of[10,19]){s.set(x,by,P.ink);s.set(x+1,by-1,P.ink);s.set(x+2,by-1,P.ink);s.set(x+3,by,P.ink)}}
+  else if(blinking){s.rect(11+look,by+1,2,1,P.ink);s.rect(20+look,by+1,2,1,P.ink)}
+  else if(tier===1){s.rect(10+look,by-1,4,1,P.ink);s.rect(19+look,by-1,4,1,P.ink);s.rect(11+look,by,2,2,P.ink);s.rect(20+look,by,2,2,P.ink)}
+  else{
+    s.rect(11+look,by-1,2,3,P.ink);s.rect(20+look,by-1,2,3,P.ink);s.set(11+look,by-1,P.white);s.set(20+look,by-1,P.white);
+    if(tier===2){s.rect(10,by-3,2,1,P.ink);s.rect(12,by-2,2,1,P.ink);s.rect(21,by-3,2,1,P.ink);s.rect(19,by-2,2,1,P.ink)}
+  }
+  const cc=tier===2?P.red:P.cheek; s.rect(8,by+3,3,2,cc); s.rect(22,by+3,3,2,cc);
+  if(p.mood==='done'){s.rect(14,by+3,5,2,P.mouth);s.rect(14,by+3,5,1,P.ink);s.rect(16,by+4,2,1,P.pink)}
+  else if(tier===0){s.set(15,by+3,P.ink);s.set(16,by+4,P.ink);s.set(17,by+3,P.ink)}
+  else if(tier===1){s.rect(15,by+4,3,1,P.ink)}
+  else{s.set(14,by+4,P.ink);s.set(15,by+3,P.ink);s.set(16,by+4,P.ink);s.set(17,by+3,P.ink);s.set(18,by+4,P.ink)}
+  if(tapping&&tapDown){s.set(23,30,P.ink);s.set(24,29,P.ink);s.set(24,31,P.ink)}
+  if(tier>=1){s.rect(6,topY+3+Math.floor(fmod(t*2,4)),1,2,P.sweat)}
+  if(tier===2){for(let i=0;i<2;i++){const rise=Math.floor(fmod(t*3+i*3,6));s.rect(i===0?6:2,topY-rise+(i===0?1:4),2,2,P.white)}}
+  if(p.mood==='done'){
+    [[4,7],[28,9],[8,3],[24,4]].forEach((sp,i)=>{if(Math.sin(t*5+i*1.7)>.1)s.plus(sp[0],sp[1],P.gold)});
+    if(t<3.5){const cols=[P.pink,P.teal,P.gold,P.sweat];for(let i=0;i<12;i++){const x=(i*11+3)%30,y=Math.floor(fmod(t*9+i*7,30));if(!s.get(x,y)&&!s.get(x+1,y))s.rect(x,y,2,1,cols[i%4])}}
+  }
+  return s;
+}
+
+/* canvas drawing: S = css px per sprite pixel, head = extra headroom rows (in sprite px) */
+function setup(canvas,S,head){
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const w=32*S,h=(32+head)*S;
+  canvas.width=w*dpr;canvas.height=h*dpr;canvas.style.width=w+'px';canvas.style.height=h+'px';
+  return{ctx:canvas.getContext('2d'),dpr,w,h,S};
+}
+function drawMochi(g,pose,k){
+  const {ctx,dpr,w,h,S}=g;const sp=makeSprite(pose),m=bodyMotion(pose);
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  ctx.translate(w/2+m.shake*S,h);ctx.translate(0,(k.dy||0)*(S/6)+m.dy*S);ctx.scale((k.sx||1)*m.sx,(k.sy||1)*m.sy);ctx.translate(-16*S,-32*S);
+  for(let c=1;c<PAL.length;c++){
+    ctx.fillStyle=PAL[c];ctx.beginPath();
+    for(let y=0;y<32;y++){let x=0;while(x<32){if(sp.px[y*32+x]!==c){x++;continue}let e=x;while(e<32&&sp.px[y*32+e]===c)e++;ctx.rect(x*S,y*S,(e-x)*S,S);x=e}}
+    ctx.fill();
+  }
+}
+const enterKeys=[[0,240,.9,1.15],[.26,-16,.88,1.22],[.38,0,1.24,.72],[.52,-8,.92,1.1],[.64,0,1.08,.92],[.82,0,1,1]];
+const exitKeys=[[0,0,1,1],[.14,0,1.16,.8],[.34,-46,.88,1.18],[.7,260,.9,1.2]];
+function sample(keys,t){
+  if(t<=keys[0][0])return{dy:keys[0][1],sx:keys[0][2],sy:keys[0][3]};
+  const L=keys[keys.length-1];if(t>=L[0])return{dy:L[1],sx:L[2],sy:L[3]};
+  let i=0;while(keys[i+1][0]<t)i++;const a=keys[i],b=keys[i+1],x=(t-a[0])/(b[0]-a[0]),u=x*x*(3-2*x);
+  return{dy:a[1]+(b[1]-a[1])*u,sx:a[2]+(b[2]-a[2])*u,sy:a[3]+(b[3]-a[3])*u};
+}
+
+/* ---- pose strip ---- */
+const strip=[...document.querySelectorAll('canvas[data-pose]')].map(c=>{
+  const i=+c.dataset.pose;
+  const pad=c.parentElement;const S=Math.max(4,Math.floor(Math.min(pad.clientWidth||220,260)/32));
+  return{g:setup(c,S,0),pose:i===3?{mood:'done',tier:0}:{mood:'waiting',tier:i},off:i*1.7};
+});
+function drawStrip(now){strip.forEach(s=>drawMochi(s.g,{t:fmod(now+s.off,s.pose.mood==='done'?7:60)+(s.pose.mood==='done'?0:2),mood:s.pose.mood,tier:s.pose.tier,look:0},{}))}
+
+/* ---- hero stage ---- */
+const stage=document.getElementById('stage'),heroCanvas=document.getElementById('hero');
+const bubble=document.getElementById('bubble'),btitle=document.getElementById('btitle'),bmsg=document.getElementById('bmsg');
+const termtext=document.getElementById('termtext'),clock=document.getElementById('clock'),caption=document.getElementById('caption');
+let hg=null,S_HERO=0;
+function sizeHero(){
+  const w=stage.clientWidth;const S=Math.max(4,Math.min(10,Math.floor(w/68)));
+  if(S!==S_HERO){S_HERO=S;hg=setup(heroCanvas,S,14)}
+  bubble.style.bottom=(32*S_HERO-6*S_HERO+2)+'px';
+}
+sizeHero();addEventListener('resize',sizeHero);
+
+const TERM_ASK=
+'<span class="dim">~/demo-app</span> claude\n\n● I\'ll run the tests before changing anything.\n\n  <span class="ask">Bash(npm test)</span>\n  Allow it? [y/n] <span class="caret"></span>';
+const TERM_DONE=
+'<span class="dim">~/demo-app</span> claude\n\n● I\'ll run the tests before changing anything.\n\n  <span class="ask">Bash(npm test)</span>\n  Allow it? <span class="ok">y</span>\n\n  <span class="ok">✓ 24 passed</span>';
+function setTerm(h){if(termtext.dataset.h!==h){termtext.innerHTML=h;termtext.dataset.h=h}}
+const TITLES=["CLAUDE'S WAITING ON YOU","STILL WAITING...","HELLOOO? CLAUDE NEEDS YOU"];
+const MSG="Claude needs your permission to use Bash";
+const LOOP=21,T_ENTER=3,T1=9.5,T2=13.5,T_REPLY=17.5,T_EXIT=0.72;
+const CAPS=[
+ ['0:00','<strong>Claude asks for permission</strong> and you\'re in another window.'],
+ ['0:05','<strong>Five seconds later</strong>, Mochi pops up in the corner of your screen.'],
+ ['1:00','<strong>A minute in</strong> he holds up a sign and taps his foot.'],
+ ['2:00','<strong>Two minutes in</strong> he is losing patience.'],
+ ['0:00','<strong>You reply.</strong> He hops away until next time.']];
+let capIdx=-1;
+function setCap(i,time){if(capIdx!==i){capIdx=i;caption.innerHTML=CAPS[i][1]}clock.textContent=time}
+const back=x=>{const u=Math.min(1,x)-1;return 1+2.70158*u*u*u+1.70158*u*u};
+
+function drawHero(now){
+  const lt=REDUCED?6:fmod(now,LOOP);
+  let tier=0,age=0,k={dy:240,sx:1,sy:1},show=false,sinceEnter=0,exiting=null,time='0:00',cap=0;
+  if(lt<T_ENTER){setTerm(TERM_ASK);cap=0;time='0:0'+Math.min(4,Math.floor(lt/T_ENTER*5))}
+  else{
+    sinceEnter=lt-T_ENTER;
+    if(lt<T_REPLY){
+      setTerm(TERM_ASK);
+      if(lt>=T2){tier=2;age=120;time='2:00';cap=3}else if(lt>=T1){tier=1;age=60;time='1:00';cap=2}else{time='0:05';cap=1}
+      k=sample(enterKeys,sinceEnter);show=true;
+    }else{
+      setTerm(TERM_DONE);cap=4;time='2:07';tier=2;age=120;
+      exiting=lt-T_REPLY;k=sample(exitKeys,exiting);show=exiting<T_EXIT;
+    }
+  }
+  setCap(cap,time);
+  const pose={t:Math.max(0,sinceEnter)+age,mood:'waiting',tier,look:0};
+  heroCanvas.style.visibility=show?'visible':'hidden';
+  if(show&&hg)drawMochi(hg,pose,k);
+  // bubble
+  let sc=0;
+  if(show){
+    if(exiting!==null)sc=Math.max(0,1-exiting/.15);
+    else{const b=sinceEnter-.5;if(b>0)sc=Math.max(0,back(b/.3))}
+  }
+  bubble.hidden=sc<=.01;
+  if(!bubble.hidden){
+    bubble.style.transform='scale('+sc+')';
+    const title=TITLES[tier],chars=Math.floor(Math.max(0,sinceEnter-.55)*48);
+    btitle.textContent=title.slice(0,chars);bmsg.textContent=MSG.slice(0,Math.max(0,chars-title.length));
+  }
+}
+
+function frame(ms){
+  const now=ms/1000;drawHero(now);drawStrip(now);
+  if(!REDUCED)requestAnimationFrame(frame);
+}
+const FIX=new URLSearchParams(location.search).get("t");
+if(FIX!==null){drawHero(+FIX);drawStrip(+FIX+2)}
+else if(REDUCED){drawHero(0);drawStrip(2);addEventListener("resize",()=>{drawHero(0)})}
+else requestAnimationFrame(frame);
+document.addEventListener('visibilitychange',()=>{});
+
+/* copy button */
+const copyBtn=document.getElementById('copy');
+copyBtn.addEventListener('click',async()=>{
+  const text=document.getElementById('cmd').textContent;
+  try{await navigator.clipboard.writeText(text);copyBtn.textContent='Copied'}
+  catch(e){const r=document.createRange();r.selectNodeContents(document.getElementById('cmd'));const s=getSelection();s.removeAllRanges();s.addRange(r);copyBtn.textContent='Press Cmd+C'}
+  setTimeout(()=>copyBtn.textContent='Copy',1800);
+});
+})();
+</script>
+</body>
+</html>
